@@ -9,6 +9,10 @@ type Player struct {
 	description string
 }
 
+func NewPlayer(name, description string) *Player {
+	return &Player{name: name, description: description}
+}
+
 func (p Player) Name() string {
 	return p.name
 }

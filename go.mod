@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/charmbracelet/bubbletea v0.23.2
+	github.com/grupawp/warships-lightgui v1.2.0
 	github.com/rs/zerolog v1.29.1
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 )
@@ -11,6 +12,7 @@ require (
 require (
 	github.com/aymanbagabas/go-osc52 v1.2.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
+	github.com/fatih/color v1.13.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
