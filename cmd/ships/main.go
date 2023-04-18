@@ -1,11 +1,12 @@
 package main
 
 import (
-	"context"
+	tea "github.com/charmbracelet/bubbletea"
+	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/board"
 	"github.com/kovansky/wp-battleships/ships"
 	"github.com/rs/zerolog"
 	"os"
-	"os/signal"
 )
 
 var (
@@ -15,12 +16,6 @@ var (
 )
 
 func main() {
-	// Setup signal handlers
-	_, cancel := context.WithCancel(context.Background())
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() { <-c; cancel() }()
-
 	// Create log
 	log = zerolog.New(os.Stdout).With().Timestamp().Logger().Output(zerolog.ConsoleWriter{Out: os.Stdout})
 
@@ -28,7 +23,7 @@ func main() {
 	client = ships.NewClient("https://go-pjatk-server.fly.dev/api", &log)
 
 	// Initialize ships
-	game, err := client.InitGame(ships.GamePost{
+	game, err := client.InitGame(battleships.GamePost{
 		Desc:  "It's a mee, Mario",
 		Nick:  "Mario_the_Plumber",
 		Wpbot: true,
@@ -37,5 +32,10 @@ func main() {
 		log.Fatal().Err(err).Msg("Couldn't init the game")
 	}
 
-	log.Info().Str("Api-Key", game.Key).Msg("Game started")
+	log.Info().Str("Api-Key", game.Key()).Msg("Game started")
+
+	p := tea.NewProgram(board.InitialBoard([]string{"A1", "A10", "B10"}))
+	if _, err = p.Run(); err != nil {
+		log.Fatal().Err(err).Msg("Could not run the GUI")
+	}
 }

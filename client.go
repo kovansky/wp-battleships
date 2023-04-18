@@ -1,4 +1,8 @@
-package ships
+package battleships
+
+type Client interface {
+	InitGame(data GamePost) (Game, error)
+}
 
 type GamePost struct {
 	Coords     []string `json:"coords,omitempty"`
