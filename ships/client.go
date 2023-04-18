@@ -24,13 +24,9 @@ func NewClient(baseUrl string, log *zerolog.Logger) *Client {
 	return &Client{baseUrl: baseUrl, log: log}
 }
 
-func (c *Client) InitGame(withBot bool) (*Game, error) {
-	method, endpoint := http.MethodPost, "/shps"
-	body, err := json.Marshal(struct {
-		Wpbot bool `json:"wpbot"`
-	}{
-		withBot,
-	})
+func (c *Client) InitGame(data GamePost) (*Game, error) {
+	method, endpoint := http.MethodPost, "/game"
+	body, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
@@ -62,15 +58,21 @@ func (c *Client) request(method, endpoint string, body []byte) (map[string]inter
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 && res.StatusCode != 201 {
-		return nil, nil, errors.New(fmt.Sprintf("Server returned code %d", res.StatusCode))
-	}
-
 	var parsed map[string]interface{}
 	if err = json.NewDecoder(res.Body).Decode(&parsed); err != nil {
 		if !errors.Is(err, io.EOF) {
 			return nil, nil, err
 		}
+	}
+
+	if res.StatusCode != 200 && res.StatusCode != 201 {
+		errMsg := fmt.Sprintf("Server returned code %d", res.StatusCode)
+
+		if message, ok := parsed["message"]; ok {
+			errMsg = fmt.Sprintf("Server returned code %d. Message: %v", res.StatusCode, message)
+		}
+
+		return nil, nil, errors.New(errMsg)
 	}
 
 	return parsed, res.Header, nil

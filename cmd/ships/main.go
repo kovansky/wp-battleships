@@ -28,7 +28,11 @@ func main() {
 	client = ships.NewClient("https://go-pjatk-server.fly.dev/api", &log)
 
 	// Initialize ships
-	game, err := client.InitGame(true)
+	game, err := client.InitGame(ships.GamePost{
+		Desc:  "It's a mee, Mario",
+		Nick:  "Mario_the_Plumber",
+		Wpbot: true,
+	})
 	if err != nil {
 		log.Fatal().Err(err).Msg("Couldn't init the game")
 	}
