@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
@@ -72,7 +73,17 @@ func main() {
 	globalTheme := board.NewTheme().
 		SetText(lipgloss.NewStyle().Foreground(lipgloss.Color("#ffd700")))
 
-	program := tea.NewProgram(board.InitFullComponent(theme, enemyTheme, globalTheme, game.Board(), []string{}), tea.WithAltScreen())
+	playersInfo := fmt.Sprintf("%s %s %s\n"+
+		"%s %s %s",
+		globalTheme.Text.Copy().Bold(true).Render("YOU"),
+		game.Player().Name(),
+		lipgloss.NewStyle().Italic(true).Render("("+game.Player().Description()+")"),
+		globalTheme.Text.Copy().Bold(true).Render("ENEMY"),
+		game.Opponent().Name(),
+		lipgloss.NewStyle().Italic(true).Render("("+game.Opponent().Description()+")"),
+	)
+
+	program := tea.NewProgram(board.InitFullComponent(theme, enemyTheme, globalTheme, playersInfo, game.Board(), []string{}), tea.WithAltScreen())
 	if _, err := program.Run(); err != nil {
 		log.Error().Err(err).Msg("Could not draw board")
 	}

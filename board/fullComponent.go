@@ -15,14 +15,15 @@ type themes struct {
 type FullComponent struct {
 	themes themes
 
-	friendly Component
-	enemy    Component
+	friendly    Component
+	enemy       Component
+	playersInfo string
 
 	flexbox     *stickers.FlexBox
 	asciiRender *figlet4go.AsciiRender
 }
 
-func InitFullComponent(themeFriendly, themeEnemy, themeGlobal Theme, shipsFriendly, shipsEnemy []string) FullComponent {
+func InitFullComponent(themeFriendly, themeEnemy, themeGlobal Theme, playersInfo string, shipsFriendly, shipsEnemy []string) FullComponent {
 	friendly := InitComponent(themeFriendly, shipsFriendly...)
 	enemy := InitComponent(themeEnemy, shipsEnemy...)
 	flexbox := stickers.NewFlexBox(0, 0)
@@ -32,7 +33,7 @@ func InitFullComponent(themeFriendly, themeEnemy, themeGlobal Theme, shipsFriend
 		themeFriendly,
 		themeEnemy,
 		themeGlobal,
-	}, friendly, enemy, flexbox, asciiRender}
+	}, friendly, enemy, playersInfo, flexbox, asciiRender}
 }
 
 func (c FullComponent) Init() tea.Cmd {
@@ -99,6 +100,7 @@ func (c FullComponent) View() string {
 
 	c.flexbox.Row(1).Cell(0).SetContent(c.friendly.View())
 	c.flexbox.Row(1).Cell(1).SetContent(c.enemy.View())
+	c.flexbox.Row(1).Cell(2).SetContent(c.playersInfo)
 
 	return c.flexbox.Render()
 }
