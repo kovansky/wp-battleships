@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
-	gui "github.com/grupawp/warships-lightgui"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/board"
 	"github.com/kovansky/wp-battleships/ships"
 	"github.com/rs/zerolog"
 	"os"
@@ -50,16 +52,28 @@ func main() {
 		log.Fatal().Err(err).Msg("Couldn't update the game status")
 	}
 
-	board := gui.New(gui.NewConfig())
-	board.Import(game.Board())
-	board.Display()
+	colRowStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#00ff7f")).
+		Bold(true)
+	theme := board.NewTheme().
+		SetRows(colRowStyle).
+		SetCols(colRowStyle).
+		SetShip(board.NewBrush().
+			SetChar('X').
+			SetStyle(lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#ff4500"))))
 
-	log.Info().
-		Str("Name", game.Player().Name()).
-		Str("Description", game.Player().Description()).
-		Msg("You")
-	log.Info().
-		Str("Name", game.Opponent().Name()).
-		Str("Description", game.Opponent().Description()).
-		Msg("Opponent")
+	program := tea.NewProgram(board.InitComponent(theme, game.Board()...))
+	if _, err := program.Run(); err != nil {
+		log.Error().Err(err).Msg("Could not draw board")
+	}
+
+	//log.Info().
+	//	Str("Name", game.Player().Name()).
+	//	Str("Description", game.Player().Description()).
+	//	Msg("You")
+	//log.Info().
+	//	Str("Name", game.Opponent().Name()).
+	//	Str("Description", game.Opponent().Description()).
+	//	Msg("Opponent")
 }
