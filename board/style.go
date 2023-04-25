@@ -32,6 +32,7 @@ func (b Brush) SetStyle(style lipgloss.Style) Brush {
 type Theme struct {
 	Rows   lipgloss.Style
 	Cols   lipgloss.Style
+	Text   lipgloss.Style
 	Border Brush
 	Ship   Brush
 	Hit    Brush
@@ -48,6 +49,11 @@ func (t Theme) SetRows(style lipgloss.Style) Theme {
 
 func (t Theme) SetCols(style lipgloss.Style) Theme {
 	t.Cols = style
+	return t
+}
+
+func (t Theme) SetText(style lipgloss.Style) Theme {
+	t.Text = style
 	return t
 }
 

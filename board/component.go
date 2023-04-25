@@ -24,7 +24,7 @@ func (c Component) Init() tea.Cmd {
 	return nil
 }
 
-func (c Component) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (c Component) Update(msg tea.Msg) (Component, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {

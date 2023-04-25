@@ -3,8 +3,10 @@ module github.com/kovansky/wp-battleships
 go 1.19
 
 require (
+	github.com/76creates/stickers v1.3.0
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/charmbracelet/lipgloss v0.7.1
+	github.com/mbndr/figlet4go v0.0.0-20190224160619-d6cef5b186ea
 	github.com/rs/zerolog v1.29.1
 )
 

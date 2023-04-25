@@ -62,8 +62,17 @@ func main() {
 			SetChar('X').
 			SetStyle(lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#ff4500"))))
+	enemyTheme := board.NewTheme().
+		SetRows(colRowStyle).
+		SetCols(colRowStyle).
+		SetShip(board.NewBrush().
+			SetChar('X').
+			SetStyle(lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#ff4500"))))
+	globalTheme := board.NewTheme().
+		SetText(lipgloss.NewStyle().Foreground(lipgloss.Color("#ffd700")))
 
-	program := tea.NewProgram(board.InitComponent(theme, game.Board()...))
+	program := tea.NewProgram(board.InitFullComponent(theme, enemyTheme, globalTheme, game.Board(), []string{}), tea.WithAltScreen())
 	if _, err := program.Run(); err != nil {
 		log.Error().Err(err).Msg("Could not draw board")
 	}
