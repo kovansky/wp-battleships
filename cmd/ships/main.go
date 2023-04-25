@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog"
 	"os"
 	"os/signal"
+	"time"
 )
 
 var (
@@ -48,7 +49,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Couldn't update the game board")
 	}
-	err = client.GameStatus(game)
+	err = client.GameDesc(game)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Couldn't update the game status")
 	}
@@ -71,29 +72,63 @@ func main() {
 			SetStyle(lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#ff4500"))))
 	globalTheme := board.NewTheme().
-		SetText(lipgloss.NewStyle().Foreground(lipgloss.Color("#ffd700")))
+		SetTextPrimary(lipgloss.NewStyle().Foreground(lipgloss.Color("#ffd700"))).
+		SetTextSecondary(lipgloss.NewStyle().Foreground(lipgloss.Color("#1e90ff")))
 
 	playersInfo := fmt.Sprintf("%s %s %s\n"+
 		"%s %s %s",
-		globalTheme.Text.Copy().Bold(true).Render("YOU"),
+		globalTheme.TextPrimary.Copy().Bold(true).Render("YOU"),
 		game.Player().Name(),
 		lipgloss.NewStyle().Italic(true).Render("("+game.Player().Description()+")"),
-		globalTheme.Text.Copy().Bold(true).Render("ENEMY"),
+		globalTheme.TextPrimary.Copy().Bold(true).Render("ENEMY"),
 		game.Opponent().Name(),
 		lipgloss.NewStyle().Italic(true).Render("("+game.Opponent().Description()+")"),
 	)
 
-	program := tea.NewProgram(board.InitFullComponent(theme, enemyTheme, globalTheme, playersInfo, game.Board(), []string{}), tea.WithAltScreen())
+	boardComponent := board.InitFullComponent(theme, enemyTheme, globalTheme, playersInfo, game.Board(), []string{})
+
+	program := tea.NewProgram(boardComponent, tea.WithAltScreen())
+
+	ticker := time.NewTicker(1 * time.Second)
+	quit := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				err = client.GameStatus(game)
+				if err != nil {
+					log.Fatal().Err(err).Msg("Couldn't update the game status")
+				}
+				//log.Debug().Interface("gameStatus", game.GameStatus()).Msg("game status updated")
+				if game.GameStatus().Status == battleships.StatusGameInProgress && game.Opponent().Name() == "" {
+					err = client.GameDesc(game)
+					if err != nil {
+						log.Fatal().Err(err).Msg("Couldn't update the game description")
+					}
+
+					playersInfo = fmt.Sprintf("%s %s %s\n"+
+						"%s %s %s",
+						globalTheme.TextPrimary.Copy().Bold(true).Render("YOU"),
+						game.Player().Name(),
+						lipgloss.NewStyle().Italic(true).Render("("+game.Player().Description()+")"),
+						globalTheme.TextPrimary.Copy().Bold(true).Render("ENEMY"),
+						game.Opponent().Name(),
+						lipgloss.NewStyle().Italic(true).Render("("+game.Opponent().Description()+")"),
+					)
+
+					program.Send(battleships.PlayersUpdateMsg{PlayersInfo: playersInfo})
+				}
+
+				program.Send(battleships.GameUpdateMsg{GameStatus: game.GameStatus()})
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
 	if _, err := program.Run(); err != nil {
+		close(quit)
 		log.Error().Err(err).Msg("Could not draw board")
 	}
-
-	//log.Info().
-	//	Str("Name", game.Player().Name()).
-	//	Str("Description", game.Player().Description()).
-	//	Msg("You")
-	//log.Info().
-	//	Str("Name", game.Opponent().Name()).
-	//	Str("Description", game.Opponent().Description()).
-	//	Msg("Opponent")
 }

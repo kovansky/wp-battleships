@@ -30,12 +30,13 @@ func (b Brush) SetStyle(style lipgloss.Style) Brush {
 }
 
 type Theme struct {
-	Rows   lipgloss.Style
-	Cols   lipgloss.Style
-	Text   lipgloss.Style
-	Border Brush
-	Ship   Brush
-	Hit    Brush
+	Rows          lipgloss.Style
+	Cols          lipgloss.Style
+	TextPrimary   lipgloss.Style
+	TextSecondary lipgloss.Style
+	Border        Brush
+	Ship          Brush
+	Hit           Brush
 }
 
 func NewTheme() Theme {
@@ -52,8 +53,13 @@ func (t Theme) SetCols(style lipgloss.Style) Theme {
 	return t
 }
 
-func (t Theme) SetText(style lipgloss.Style) Theme {
-	t.Text = style
+func (t Theme) SetTextPrimary(style lipgloss.Style) Theme {
+	t.TextPrimary = style
+	return t
+}
+
+func (t Theme) SetTextSecondary(style lipgloss.Style) Theme {
+	t.TextSecondary = style
 	return t
 }
 

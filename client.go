@@ -4,7 +4,19 @@ type Client interface {
 	InitGame(data GamePost) (Game, error)
 	UpdateBoard(game Game) error
 	GameStatus(game Game) error
+	GameDesc(game Game) error
 }
+
+type Status string
+
+const (
+	StatusWaitingWPBot   Status = "waiting_wpbot"
+	StatusWaiting        Status = "waiting"
+	StatusGameInProgress Status = "game_in_progress"
+	StatusEnded          Status = "ended"
+	StatusWin            Status = "win"
+	StatusLose           Status = "lose"
+)
 
 type GamePost struct {
 	Coords     []string `json:"coords,omitempty"`
@@ -22,8 +34,8 @@ type GameGet struct {
 	OppDesc  string   `json:"opp_desc"`
 	OppShots []string `json:"opp_shots"`
 
-	GameStatus     string `json:"game_status"`
-	LastGameStatus string `json:"last_game_status"`
+	GameStatus     Status `json:"game_status"`
+	LastGameStatus Status `json:"last_game_status"`
 
 	ShouldFire bool `json:"should_fire"`
 	Timer      int  `json:"timer"`

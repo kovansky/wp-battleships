@@ -2,8 +2,11 @@ package board
 
 import (
 	"github.com/76creates/stickers"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	battleships "github.com/kovansky/wp-battleships"
 	"github.com/mbndr/figlet4go"
+	"strconv"
 )
 
 type themes struct {
@@ -21,6 +24,10 @@ type FullComponent struct {
 
 	flexbox     *stickers.FlexBox
 	asciiRender *figlet4go.AsciiRender
+
+	targetInput textinput.Model
+
+	battleships.GameStatus
 }
 
 func InitFullComponent(themeFriendly, themeEnemy, themeGlobal Theme, playersInfo string, shipsFriendly, shipsEnemy []string) FullComponent {
@@ -29,11 +36,20 @@ func InitFullComponent(themeFriendly, themeEnemy, themeGlobal Theme, playersInfo
 	flexbox := stickers.NewFlexBox(0, 0)
 	asciiRender := figlet4go.NewAsciiRender()
 
-	return FullComponent{themes{
-		themeFriendly,
-		themeEnemy,
-		themeGlobal,
-	}, friendly, enemy, playersInfo, flexbox, asciiRender}
+	targetInput := textinput.New()
+	targetInput.Placeholder = "Where to shoot, captain?"
+	targetInput.CharLimit = 2
+	targetInput.Width = 25
+
+	return FullComponent{
+		themes:      themes{themeFriendly, themeEnemy, themeGlobal},
+		friendly:    friendly,
+		enemy:       enemy,
+		playersInfo: playersInfo,
+		flexbox:     flexbox,
+		asciiRender: asciiRender,
+		targetInput: targetInput,
+	}
 }
 
 func (c FullComponent) Init() tea.Cmd {
@@ -57,11 +73,14 @@ func (c FullComponent) Init() tea.Cmd {
 				stickers.NewFlexBoxCell(1, 1),
 			},
 		),
+		c.flexbox.NewRow().AddCells(
+			[]*stickers.FlexBoxCell{
+				stickers.NewFlexBoxCell(1, 1),
+			}),
 	}
-
 	c.flexbox.AddRows(rows)
 
-	return nil
+	return textinput.Blink
 }
 
 func (c FullComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -79,11 +98,21 @@ func (c FullComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		c.flexbox.SetWidth(msg.Width)
 		c.flexbox.SetHeight(msg.Height)
+	case battleships.GameUpdateMsg:
+		c.GameStatus = msg.GameStatus
+
+		if c.GameStatus.ShouldFire {
+			cmds = append(cmds, c.targetInput.Focus())
+		}
+	case battleships.PlayersUpdateMsg:
+		c.playersInfo = msg.PlayersInfo
 	}
 
 	c.friendly, cmd = c.friendly.Update(msg)
 	cmds = append(cmds, cmd)
 	c.enemy, cmd = c.enemy.Update(msg)
+	cmds = append(cmds, cmd)
+	c.targetInput, cmd = c.targetInput.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return c, tea.Batch(cmds...)
@@ -94,13 +123,30 @@ func (c FullComponent) View() string {
 	enemyRender, _ := c.asciiRender.Render("Enemy")
 	gameInfoRender, _ := c.asciiRender.Render("Game Info")
 
-	c.flexbox.Row(0).Cell(0).SetContent(c.themes.global.Text.Render(friendlyRender))
-	c.flexbox.Row(0).Cell(1).SetContent(c.themes.global.Text.Render(enemyRender))
-	c.flexbox.Row(0).Cell(2).SetContent(c.themes.global.Text.Render(gameInfoRender))
+	friendlyState := c.themes.global.TextPrimary
+	enemyState := c.themes.global.TextPrimary
+
+	gameInfo := c.playersInfo
+
+	if c.GameStatus.ShouldFire {
+		friendlyState = c.themes.global.TextSecondary
+
+		gameInfo += "\n\nYour turn!\n\t" + c.themes.global.TextSecondary.Render(strconv.Itoa(c.GameStatus.Timer)) + " seconds left to fire"
+	} else {
+		enemyState = c.themes.global.TextSecondary
+	}
+
+	c.flexbox.Row(0).Cell(0).SetContent(friendlyState.Render(friendlyRender))
+	c.flexbox.Row(0).Cell(1).SetContent(enemyState.Render(enemyRender))
+	c.flexbox.Row(0).Cell(2).SetContent(c.themes.global.TextPrimary.Render(gameInfoRender))
 
 	c.flexbox.Row(1).Cell(0).SetContent(c.friendly.View())
 	c.flexbox.Row(1).Cell(1).SetContent(c.enemy.View())
-	c.flexbox.Row(1).Cell(2).SetContent(c.playersInfo)
+	c.flexbox.Row(1).Cell(2).SetContent(gameInfo)
+
+	if c.GameStatus.ShouldFire {
+		c.flexbox.Row(2).Cell(0).SetContent("\n\n\n" + c.targetInput.View())
+	}
 
 	return c.flexbox.Render()
 }

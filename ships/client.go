@@ -64,7 +64,7 @@ func (c *Client) UpdateBoard(game battleships.Game) error {
 	return nil
 }
 
-func (c *Client) GameStatus(game battleships.Game) error {
+func (c *Client) GameDesc(game battleships.Game) error {
 	method, endpoint := http.MethodGet, "/game/desc"
 	var body []byte
 
@@ -88,6 +88,31 @@ func (c *Client) GameStatus(game battleships.Game) error {
 	game.SetGameStatus(status)
 	game.SetPlayer(NewPlayer(parsed.Nick, parsed.Desc))
 	game.SetOpponent(NewPlayer(parsed.Opponent, parsed.OppDesc))
+	return nil
+}
+
+func (c *Client) GameStatus(game battleships.Game) error {
+	method, endpoint := http.MethodGet, "/game"
+	var body []byte
+
+	res, _, err := c.request(method, endpoint, game.Key(), body)
+	if err != nil {
+		return err
+	}
+
+	var parsed battleships.GameGet
+	if err = json.Unmarshal(res, &parsed); err != nil {
+		return err
+	}
+
+	status := battleships.GameStatus{
+		Status:     parsed.GameStatus,
+		LastStatus: parsed.LastGameStatus,
+		ShouldFire: parsed.ShouldFire,
+		Timer:      parsed.Timer,
+	}
+
+	game.SetGameStatus(status)
 	return nil
 }
 

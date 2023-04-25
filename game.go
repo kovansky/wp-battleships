@@ -16,8 +16,16 @@ type Game interface {
 }
 
 type GameStatus struct {
-	Status     string
-	LastStatus string
+	Status     Status
+	LastStatus Status
 	ShouldFire bool
 	Timer      int
+}
+
+type GameUpdateMsg struct {
+	GameStatus
+}
+
+type PlayersUpdateMsg struct {
+	PlayersInfo string
 }
