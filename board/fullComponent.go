@@ -103,6 +103,12 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				c.displayError = "Field outside of board"
 				break
 			}
+
+			if _, exists := c.OpponentBoard()[field]; exists {
+				c.displayError = "You already fired at this field!"
+				break
+			}
+
 			c.displayError = ""
 			c.targetInput.SetValue("")
 
