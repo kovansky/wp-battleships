@@ -68,25 +68,25 @@ func (t Theme) SetTextSecondary(style lipgloss.Style) Theme {
 }
 
 func (t Theme) SetBorder(brush Brush) Theme {
-	brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
+	//brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
 	t.Border = brush
 	return t
 }
 
 func (t Theme) SetShip(brush Brush) Theme {
-	brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
+	//brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
 	t.Ship = brush
 	return t
 }
 
 func (t Theme) SetHit(brush Brush) Theme {
-	brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
+	//brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
 	t.Hit = brush
 	return t
 }
 
 func (t Theme) SetMiss(brush Brush) Theme {
-	brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
+	//brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
 	t.Miss = brush
 	return t
 }

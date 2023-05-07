@@ -60,7 +60,7 @@ func (c Component) View() string {
 				continue
 			}
 
-			builder.WriteString(strings.Repeat(sep, 3))
+			builder.WriteString(strings.Repeat(sep, 2))
 		}
 
 		builder.WriteByte('\n')
@@ -68,7 +68,7 @@ func (c Component) View() string {
 
 	builder.WriteString(strings.Repeat(sep, 3))
 	for _, colLabel := range cols {
-		builder.WriteString(sep + c.theme.Cols.Render(colLabel) + sep)
+		builder.WriteString(c.theme.Cols.Render(colLabel) + sep)
 	}
 
 	return builder.String()
