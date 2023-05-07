@@ -102,8 +102,8 @@ func (t Theme) RenderBorder() string {
 	return t.Border.Style().Render(string(t.Border.Char()))
 }
 
-func (t Theme) RenderField(field battleships.Field) string {
-	switch field.State {
+func (t Theme) RenderField(state battleships.FieldState) string {
+	switch state {
 	case battleships.FieldStateHit:
 		return t.RenderHit()
 	case battleships.FieldStateMiss:
@@ -113,7 +113,7 @@ func (t Theme) RenderField(field battleships.Field) string {
 	case battleships.FieldStateSunk:
 		return t.RenderSunk()
 	default:
-		return "   "
+		return "  "
 	}
 }
 

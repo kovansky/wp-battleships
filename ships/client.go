@@ -60,12 +60,9 @@ func (c *Client) UpdateBoard(game battleships.Game) error {
 		return err
 	}
 
-	boardFields := make([]battleships.Field, len(boardRes.Board))
+	boardFields := make(map[string]battleships.FieldState, len(boardRes.Board))
 	for _, field := range boardRes.Board {
-		boardFields = append(boardFields, battleships.Field{
-			Coord: field,
-			State: battleships.FieldStateShip,
-		})
+		boardFields[field] = battleships.FieldStateShip
 	}
 
 	game.SetBoard(boardFields)
@@ -121,6 +118,22 @@ func (c *Client) GameStatus(game battleships.Game) error {
 	}
 
 	game.SetGameStatus(status)
+
+	board := game.Board()
+
+	if board != nil {
+		for _, shot := range parsed.OppShots {
+			if _, ok := board[shot]; ok &&
+				(board[shot] == battleships.FieldStateShip ||
+					board[shot] == battleships.FieldStateHit) {
+				board[shot] = battleships.FieldStateHit
+			} else {
+				board[shot] = battleships.FieldStateMiss
+			}
+		}
+		game.SetBoard(board)
+	}
+
 	return nil
 }
 

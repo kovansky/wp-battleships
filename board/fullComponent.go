@@ -32,9 +32,9 @@ type Full struct {
 	battleships.Game
 }
 
-func InitFull(game battleships.Game, themeFriendly, themeEnemy, themeGlobal Theme, playersInfo string, shipsFriendly, shipsEnemy []battleships.Field) Full {
-	friendly := InitSingle(themeFriendly, shipsFriendly...)
-	enemy := InitSingle(themeEnemy, shipsEnemy...)
+func InitFull(game battleships.Game, themeFriendly, themeEnemy, themeGlobal Theme, playersInfo string) Full {
+	friendly := InitSingle(themeFriendly, game.Board())
+	opponent := InitSingle(themeEnemy, game.OpponentBoard())
 	flexbox := stickers.NewFlexBox(0, 0)
 	asciiRender := figlet4go.NewAsciiRender()
 
@@ -43,13 +43,10 @@ func InitFull(game battleships.Game, themeFriendly, themeEnemy, themeGlobal Them
 	targetInput.CharLimit = 3
 	targetInput.Width = 25
 
-	game.SetBoard(shipsFriendly)
-	game.SetOpponentBoard(shipsEnemy)
-
 	return Full{
 		themes:      themes{themeFriendly, themeEnemy, themeGlobal},
 		friendly:    friendly,
-		opponent:    enemy,
+		opponent:    opponent,
 		playersInfo: playersInfo,
 		flexbox:     flexbox,
 		asciiRender: asciiRender,
@@ -124,25 +121,20 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				fieldState = battleships.FieldStateSunk
 			}
 
-			c.SetOpponentBoard(append(c.OpponentBoard(), battleships.Field{
-				Coord: field,
-				State: fieldState,
-			}))
-			c.opponent.SetBoard(c.OpponentBoard()...)
+			board := c.OpponentBoard()
+			if board == nil {
+				board = make(map[string]battleships.FieldState)
+			}
+
+			board[field] = fieldState
+
+			c.SetOpponentBoard(board)
+			c.opponent.SetBoard(c.OpponentBoard())
 		}
 	case tea.WindowSizeMsg:
 		c.flexbox.SetWidth(msg.Width)
 		c.flexbox.SetHeight(msg.Height)
 	case battleships.GameUpdateMsg:
-		if msg.Board != nil {
-			c.SetBoard(msg.Board)
-			c.friendly.SetBoard(c.Board()...)
-		}
-		if msg.OpponentBoard != nil {
-			c.SetOpponentBoard(msg.OpponentBoard)
-			c.opponent.SetBoard(c.OpponentBoard()...)
-		}
-
 		if c.GameStatus().ShouldFire {
 			cmds = append(cmds, c.targetInput.Focus())
 		}

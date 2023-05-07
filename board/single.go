@@ -8,13 +8,11 @@ import (
 
 type Single struct {
 	theme  Theme
-	fields map[string]battleships.Field
+	fields map[string]battleships.FieldState
 }
 
-func InitSingle(theme Theme, fields ...battleships.Field) Single {
-	fieldsMap := fieldsToMap(fields...)
-
-	return Single{theme: theme, fields: fieldsMap}
+func InitSingle(theme Theme, board map[string]battleships.FieldState) Single {
+	return Single{theme: theme, fields: board}
 }
 
 func (c *Single) Init() tea.Cmd {
@@ -33,8 +31,8 @@ func (c *Single) Update(msg tea.Msg) (Single, tea.Cmd) {
 	return *c, nil
 }
 
-func (c *Single) SetBoard(fields ...battleships.Field) {
-	c.fields = fieldsToMap(fields...)
+func (c *Single) SetBoard(board map[string]battleships.FieldState) {
+	c.fields = board
 }
 
 func (c *Single) View() string {
@@ -55,8 +53,8 @@ func (c *Single) View() string {
 		for _, colLabel := range cols {
 			field := colLabel + rowLabel
 
-			if fieldDef, contains := c.fields[field]; contains {
-				builder.WriteString(c.theme.RenderField(fieldDef))
+			if state, contains := c.fields[field]; contains {
+				builder.WriteString(c.theme.RenderField(state))
 				continue
 			}
 
@@ -72,14 +70,4 @@ func (c *Single) View() string {
 	}
 
 	return builder.String()
-}
-
-func fieldsToMap(fields ...battleships.Field) map[string]battleships.Field {
-	fieldsMap := make(map[string]battleships.Field, len(fields))
-
-	for _, field := range fields {
-		fieldsMap[strings.ToUpper(field.Coord)] = field
-	}
-
-	return fieldsMap
 }

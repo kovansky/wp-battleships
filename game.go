@@ -8,10 +8,10 @@ type Game interface {
 	SetOpponent(player Player)
 	Opponent() Player
 
-	SetBoard(board []Field)
-	Board() []Field
-	SetOpponentBoard(board []Field)
-	OpponentBoard() []Field
+	SetBoard(board map[string]FieldState)
+	Board() map[string]FieldState
+	SetOpponentBoard(board map[string]FieldState)
+	OpponentBoard() map[string]FieldState
 
 	SetGameStatus(status GameStatus)
 	GameStatus() GameStatus
@@ -24,14 +24,7 @@ type GameStatus struct {
 	Timer      int
 }
 
-type GameUpdateMsg struct {
-	Board         []Field
-	OpponentBoard []Field
-}
-
-type BoardUpdateMsg struct {
-	Board []Field
-}
+type GameUpdateMsg struct{}
 
 type PlayersUpdateMsg struct {
 	PlayersInfo string

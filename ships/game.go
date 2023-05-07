@@ -14,8 +14,8 @@ type Game struct {
 	player   battleships.Player
 
 	status        battleships.GameStatus
-	board         []battleships.Field
-	opponentBoard []battleships.Field
+	board         map[string]battleships.FieldState
+	opponentBoard map[string]battleships.FieldState
 
 	log *zerolog.Logger
 }
@@ -36,19 +36,19 @@ func (g *Game) Key() string {
 	return g.key
 }
 
-func (g *Game) SetBoard(board []battleships.Field) {
+func (g *Game) SetBoard(board map[string]battleships.FieldState) {
 	g.board = board
 }
 
-func (g *Game) Board() []battleships.Field {
+func (g *Game) Board() map[string]battleships.FieldState {
 	return g.board
 }
 
-func (g *Game) SetOpponentBoard(board []battleships.Field) {
+func (g *Game) SetOpponentBoard(board map[string]battleships.FieldState) {
 	g.opponentBoard = board
 }
 
-func (g *Game) OpponentBoard() []battleships.Field {
+func (g *Game) OpponentBoard() map[string]battleships.FieldState {
 	return g.opponentBoard
 }
 

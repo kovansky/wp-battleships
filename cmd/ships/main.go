@@ -66,7 +66,7 @@ func main() {
 		SetShip(board.NewBrush().
 			SetChar('X').
 			SetStyle(lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#ff4500")))).
+				Foreground(lipgloss.Color("#1e90ff")))).
 		SetHit(board.NewBrush().
 			SetChar('X').
 			SetStyle(lipgloss.NewStyle().
@@ -85,7 +85,7 @@ func main() {
 
 	playersInfo := fmt.Sprintf(lipgloss.NewStyle().Italic(true).Render("Waiting for game..."))
 
-	boardComponent := board.InitFull(game, theme, theme, globalTheme, playersInfo, game.Board(), []battleships.Field{})
+	boardComponent := board.InitFull(game, theme, theme, globalTheme, playersInfo)
 
 	program := tea.NewProgram(boardComponent, tea.WithAltScreen())
 
