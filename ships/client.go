@@ -116,6 +116,35 @@ func (c *Client) GameStatus(game battleships.Game) error {
 	return nil
 }
 
+func (c *Client) Fire(game battleships.Game, field string) (bool, error) {
+	method, endpoint := http.MethodPost, "/game/fire"
+	body, err := json.Marshal(struct {
+		Field string `json:"coord"`
+	}{field})
+	if err != nil {
+		return false, err
+	}
+
+	res, _, err := c.request(method, endpoint, game.Key(), body)
+	if err != nil {
+		return false, err
+	}
+
+	var parsed battleships.FireRes
+	if err = json.Unmarshal(res, &parsed); err != nil {
+		return false, err
+	}
+
+	err = c.GameStatus(game)
+	if err != nil {
+		return false, err
+	}
+
+	c.log.Debug().Interface("response", parsed).Msg("Fire response")
+
+	return false, nil
+}
+
 func (c *Client) request(method, endpoint string, key string, body []byte) ([]byte, http.Header, error) {
 	timeoutCtx, cancel := context.WithTimeout(c.ctx, 5*time.Second)
 	defer cancel()

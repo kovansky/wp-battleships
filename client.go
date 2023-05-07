@@ -5,17 +5,27 @@ type Client interface {
 	UpdateBoard(game Game) error
 	GameStatus(game Game) error
 	GameDesc(game Game) error
+
+	Fire(game Game, field string) (bool, error)
 }
 
 type Status string
 
 const (
 	StatusWaitingWPBot   Status = "waiting_wpbot"
-	StatusWaiting        Status = "waiting"
-	StatusGameInProgress Status = "game_in_progress"
-	StatusEnded          Status = "ended"
-	StatusWin            Status = "win"
-	StatusLose           Status = "lose"
+	StatusWaiting               = "waiting"
+	StatusGameInProgress        = "game_in_progress"
+	StatusEnded                 = "ended"
+	StatusWin                   = "win"
+	StatusLose                  = "lose"
+)
+
+type Aimed string
+
+const (
+	AimedMiss Aimed = "miss"
+	AimedHit        = "hit"
+	AimedSunk       = "sunk"
 )
 
 type GamePost struct {
@@ -43,4 +53,8 @@ type GameGet struct {
 
 type BoardGet struct {
 	Board []string `json:"board"`
+}
+
+type FireRes struct {
+	Result Aimed `json:"result"`
 }

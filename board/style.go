@@ -37,6 +37,7 @@ type Theme struct {
 	Border        Brush
 	Ship          Brush
 	Hit           Brush
+	Miss          Brush
 }
 
 func NewTheme() Theme {
@@ -74,9 +75,16 @@ func (t Theme) SetShip(brush Brush) Theme {
 	t.Ship = brush
 	return t
 }
+
 func (t Theme) SetHit(brush Brush) Theme {
 	brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
 	t.Hit = brush
+	return t
+}
+
+func (t Theme) SetMiss(brush Brush) Theme {
+	brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
+	t.Miss = brush
 	return t
 }
 
@@ -89,5 +97,9 @@ func (t Theme) RenderShip() string {
 }
 
 func (t Theme) RenderHit() string {
+	return t.Hit.Style().Render(string(t.Hit.Char()))
+}
+
+func (t Theme) RenderMiss() string {
 	return t.Hit.Style().Render(string(t.Hit.Char()))
 }

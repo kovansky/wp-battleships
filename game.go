@@ -22,9 +22,7 @@ type GameStatus struct {
 	Timer      int
 }
 
-type GameUpdateMsg struct {
-	GameStatus
-}
+type GameUpdateMsg struct{}
 
 type PlayersUpdateMsg struct {
 	PlayersInfo string
