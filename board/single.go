@@ -6,38 +6,38 @@ import (
 	"strings"
 )
 
-type Component struct {
+type Single struct {
 	theme  Theme
 	fields map[string]battleships.Field
 }
 
-func InitComponent(theme Theme, fields ...battleships.Field) Component {
-	fieldsMap := make(map[string]battleships.Field, len(fields))
+func InitSingle(theme Theme, fields ...battleships.Field) Single {
+	fieldsMap := fieldsToMap(fields...)
 
-	for _, ship := range fields {
-		fieldsMap[strings.ToUpper(ship.Coord)] = ship
-	}
-
-	return Component{theme: theme, fields: fieldsMap}
+	return Single{theme: theme, fields: fieldsMap}
 }
 
-func (c Component) Init() tea.Cmd {
+func (c *Single) Init() tea.Cmd {
 	return nil
 }
 
-func (c Component) Update(msg tea.Msg) (Component, tea.Cmd) {
+func (c *Single) Update(msg tea.Msg) (Single, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			return c, tea.Quit
+			return *c, tea.Quit
 		}
 	}
 
-	return c, nil
+	return *c, nil
 }
 
-func (c Component) View() string {
+func (c *Single) SetBoard(fields ...battleships.Field) {
+	c.fields = fieldsToMap(fields...)
+}
+
+func (c *Single) View() string {
 	cols, rows := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}, []string{"10", "9", "8", "7", "6", "5", "4", "3", "2", "1"}
 	const sep = " "
 	builder := strings.Builder{}
@@ -72,4 +72,14 @@ func (c Component) View() string {
 	}
 
 	return builder.String()
+}
+
+func fieldsToMap(fields ...battleships.Field) map[string]battleships.Field {
+	fieldsMap := make(map[string]battleships.Field, len(fields))
+
+	for _, field := range fields {
+		fieldsMap[strings.ToUpper(field.Coord)] = field
+	}
+
+	return fieldsMap
 }

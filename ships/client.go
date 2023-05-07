@@ -124,33 +124,31 @@ func (c *Client) GameStatus(game battleships.Game) error {
 	return nil
 }
 
-func (c *Client) Fire(game battleships.Game, field string) (bool, error) {
+func (c *Client) Fire(game battleships.Game, field string) (battleships.ShotState, error) {
 	method, endpoint := http.MethodPost, "/game/fire"
 	body, err := json.Marshal(struct {
 		Field string `json:"coord"`
 	}{field})
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	res, _, err := c.request(method, endpoint, game.Key(), body)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	var parsed battleships.FireRes
 	if err = json.Unmarshal(res, &parsed); err != nil {
-		return false, err
+		return "", err
 	}
 
 	err = c.GameStatus(game)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
-	c.log.Debug().Interface("response", parsed).Msg("Fire response")
-
-	return false, nil
+	return parsed.Result, nil
 }
 
 func (c *Client) request(method, endpoint string, key string, body []byte) ([]byte, http.Header, error) {

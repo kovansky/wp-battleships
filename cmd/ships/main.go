@@ -71,6 +71,10 @@ func main() {
 			SetChar('X').
 			SetStyle(lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#00ff7f")))).
+		SetSunk(board.NewBrush().
+			SetChar('-').
+			SetStyle(lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#006332")))).
 		SetMiss(board.NewBrush().
 			SetChar('o').
 			SetStyle(lipgloss.NewStyle().
@@ -81,7 +85,7 @@ func main() {
 
 	playersInfo := fmt.Sprintf(lipgloss.NewStyle().Italic(true).Render("Waiting for game..."))
 
-	boardComponent := board.InitFullComponent(game, theme, theme, globalTheme, playersInfo, game.Board(), []battleships.Field{})
+	boardComponent := board.InitFull(game, theme, theme, globalTheme, playersInfo, game.Board(), []battleships.Field{})
 
 	program := tea.NewProgram(boardComponent, tea.WithAltScreen())
 

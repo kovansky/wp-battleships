@@ -6,7 +6,7 @@ type Client interface {
 	GameStatus(game Game) error
 	GameDesc(game Game) error
 
-	Fire(game Game, field string) (bool, error)
+	Fire(game Game, field string) (ShotState, error)
 }
 
 type Status string
@@ -20,12 +20,12 @@ const (
 	StatusLose                  = "lose"
 )
 
-type Aimed string
+type ShotState string
 
 const (
-	AimedMiss Aimed = "miss"
-	AimedHit        = "hit"
-	AimedSunk       = "sunk"
+	ShotMiss ShotState = "miss"
+	ShotHit            = "hit"
+	ShotSunk           = "sunk"
 )
 
 type GamePost struct {
@@ -56,5 +56,5 @@ type BoardGet struct {
 }
 
 type FireRes struct {
-	Result Aimed `json:"result"`
+	Result ShotState `json:"result"`
 }

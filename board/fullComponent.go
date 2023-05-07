@@ -16,11 +16,11 @@ type themes struct {
 	global   Theme
 }
 
-type FullComponent struct {
+type Full struct {
 	themes themes
 
-	friendly     Component
-	enemy        Component
+	friendly     Single
+	opponent     Single
 	playersInfo  string
 	displayError string
 
@@ -32,9 +32,9 @@ type FullComponent struct {
 	battleships.Game
 }
 
-func InitFullComponent(game battleships.Game, themeFriendly, themeEnemy, themeGlobal Theme, playersInfo string, shipsFriendly, shipsEnemy []battleships.Field) FullComponent {
-	friendly := InitComponent(themeFriendly, shipsFriendly...)
-	enemy := InitComponent(themeEnemy, shipsEnemy...)
+func InitFull(game battleships.Game, themeFriendly, themeEnemy, themeGlobal Theme, playersInfo string, shipsFriendly, shipsEnemy []battleships.Field) Full {
+	friendly := InitSingle(themeFriendly, shipsFriendly...)
+	enemy := InitSingle(themeEnemy, shipsEnemy...)
 	flexbox := stickers.NewFlexBox(0, 0)
 	asciiRender := figlet4go.NewAsciiRender()
 
@@ -43,10 +43,13 @@ func InitFullComponent(game battleships.Game, themeFriendly, themeEnemy, themeGl
 	targetInput.CharLimit = 3
 	targetInput.Width = 25
 
-	return FullComponent{
+	game.SetBoard(shipsFriendly)
+	game.SetOpponentBoard(shipsEnemy)
+
+	return Full{
 		themes:      themes{themeFriendly, themeEnemy, themeGlobal},
 		friendly:    friendly,
-		enemy:       enemy,
+		opponent:    enemy,
 		playersInfo: playersInfo,
 		flexbox:     flexbox,
 		asciiRender: asciiRender,
@@ -55,9 +58,9 @@ func InitFullComponent(game battleships.Game, themeFriendly, themeEnemy, themeGl
 	}
 }
 
-func (c FullComponent) Init() tea.Cmd {
+func (c Full) Init() tea.Cmd {
 	c.friendly.Init()
-	c.enemy.Init()
+	c.opponent.Init()
 
 	rows := []*stickers.FlexBoxRow{
 		// Headers row
@@ -86,7 +89,7 @@ func (c FullComponent) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (c FullComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
@@ -106,18 +109,40 @@ func (c FullComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.displayError = ""
 			c.targetInput.SetValue("")
 
-			_, err := battleships.ServerClient.Fire(c.Game, field)
+			shotState, err := battleships.ServerClient.Fire(c.Game, field)
 			if err != nil {
 				c.displayError = "Error firing: " + err.Error()
 				break
 			}
+			var fieldState battleships.FieldState
+			switch shotState {
+			case battleships.ShotMiss:
+				fieldState = battleships.FieldStateMiss
+			case battleships.ShotHit:
+				fieldState = battleships.FieldStateHit
+			case battleships.ShotSunk:
+				fieldState = battleships.FieldStateSunk
+			}
 
-			c.Update(battleships.GameUpdateMsg{})
+			c.SetOpponentBoard(append(c.OpponentBoard(), battleships.Field{
+				Coord: field,
+				State: fieldState,
+			}))
+			c.opponent.SetBoard(c.OpponentBoard()...)
 		}
 	case tea.WindowSizeMsg:
 		c.flexbox.SetWidth(msg.Width)
 		c.flexbox.SetHeight(msg.Height)
 	case battleships.GameUpdateMsg:
+		if msg.Board != nil {
+			c.SetBoard(msg.Board)
+			c.friendly.SetBoard(c.Board()...)
+		}
+		if msg.OpponentBoard != nil {
+			c.SetOpponentBoard(msg.OpponentBoard)
+			c.opponent.SetBoard(c.OpponentBoard()...)
+		}
+
 		if c.GameStatus().ShouldFire {
 			cmds = append(cmds, c.targetInput.Focus())
 		}
@@ -127,7 +152,7 @@ func (c FullComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	c.friendly, cmd = c.friendly.Update(msg)
 	cmds = append(cmds, cmd)
-	c.enemy, cmd = c.enemy.Update(msg)
+	c.opponent, cmd = c.opponent.Update(msg)
 	cmds = append(cmds, cmd)
 	c.targetInput, cmd = c.targetInput.Update(msg)
 	cmds = append(cmds, cmd)
@@ -135,7 +160,7 @@ func (c FullComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, tea.Batch(cmds...)
 }
 
-func (c FullComponent) View() string {
+func (c Full) View() string {
 	friendlyRender, _ := c.asciiRender.Render("Friendly")
 	enemyRender, _ := c.asciiRender.Render("Enemy")
 	gameInfoRender, _ := c.asciiRender.Render("Game Info")
@@ -158,7 +183,7 @@ func (c FullComponent) View() string {
 	c.flexbox.Row(0).Cell(2).SetContent(c.themes.global.TextPrimary.Render(gameInfoRender))
 
 	c.flexbox.Row(1).Cell(0).SetContent(c.friendly.View())
-	c.flexbox.Row(1).Cell(1).SetContent(c.enemy.View())
+	c.flexbox.Row(1).Cell(1).SetContent(c.opponent.View())
 	c.flexbox.Row(1).Cell(2).SetContent(gameInfo)
 
 	if c.GameStatus().ShouldFire {
@@ -169,7 +194,7 @@ func (c FullComponent) View() string {
 }
 
 func fieldWithinBoard(field string) bool {
-	if len(field) != 2 {
+	if len(field) > 3 || len(field) < 2 {
 		return false
 	}
 
@@ -177,7 +202,9 @@ func fieldWithinBoard(field string) bool {
 		return false
 	}
 
-	if field[1] < '0' || field[1] > '9' {
+	if field[1] < '1' || field[1] > '9' {
+		return false
+	} else if len(field) == 3 && (field[1] != '1' || field[2] != '0') {
 		return false
 	}
 

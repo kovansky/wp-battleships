@@ -40,6 +40,7 @@ type Theme struct {
 	Border        Brush
 	Ship          Brush
 	Hit           Brush
+	Sunk          Brush
 	Miss          Brush
 }
 
@@ -68,25 +69,31 @@ func (t Theme) SetTextSecondary(style lipgloss.Style) Theme {
 }
 
 func (t Theme) SetBorder(brush Brush) Theme {
-	//brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
+	brush = brush.SetStyle(brush.Style().PaddingRight(1))
 	t.Border = brush
 	return t
 }
 
 func (t Theme) SetShip(brush Brush) Theme {
-	//brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
+	brush = brush.SetStyle(brush.Style().PaddingRight(1))
 	t.Ship = brush
 	return t
 }
 
 func (t Theme) SetHit(brush Brush) Theme {
-	//brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
+	brush = brush.SetStyle(brush.Style().PaddingRight(1))
 	t.Hit = brush
 	return t
 }
 
+func (t Theme) SetSunk(brush Brush) Theme {
+	brush = brush.SetStyle(brush.Style().PaddingRight(1))
+	t.Sunk = brush
+	return t
+}
+
 func (t Theme) SetMiss(brush Brush) Theme {
-	//brush = brush.SetStyle(brush.Style().PaddingLeft(1).PaddingRight(1))
+	brush = brush.SetStyle(brush.Style().PaddingRight(1))
 	t.Miss = brush
 	return t
 }
@@ -97,12 +104,14 @@ func (t Theme) RenderBorder() string {
 
 func (t Theme) RenderField(field battleships.Field) string {
 	switch field.State {
-	case battleships.FieldStateHit, battleships.FieldStateSunk:
+	case battleships.FieldStateHit:
 		return t.RenderHit()
 	case battleships.FieldStateMiss:
 		return t.RenderMiss()
 	case battleships.FieldStateShip:
 		return t.RenderShip()
+	case battleships.FieldStateSunk:
+		return t.RenderSunk()
 	default:
 		return "   "
 	}
@@ -116,6 +125,10 @@ func (t Theme) RenderHit() string {
 	return t.Hit.Style().Render(string(t.Hit.Char()))
 }
 
+func (t Theme) RenderSunk() string {
+	return t.Sunk.Style().Render(string(t.Sunk.Char()))
+}
+
 func (t Theme) RenderMiss() string {
-	return t.Hit.Style().Render(string(t.Hit.Char()))
+	return t.Miss.Style().Render(string(t.Miss.Char()))
 }
