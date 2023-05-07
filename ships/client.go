@@ -60,7 +60,15 @@ func (c *Client) UpdateBoard(game battleships.Game) error {
 		return err
 	}
 
-	game.SetBoard(boardRes.Board)
+	boardFields := make([]battleships.Field, len(boardRes.Board))
+	for _, field := range boardRes.Board {
+		boardFields = append(boardFields, battleships.Field{
+			Coord: field,
+			State: battleships.FieldStateShip,
+		})
+	}
+
+	game.SetBoard(boardFields)
 	return nil
 }
 

@@ -32,7 +32,7 @@ type FullComponent struct {
 	battleships.Game
 }
 
-func InitFullComponent(game battleships.Game, themeFriendly, themeEnemy, themeGlobal Theme, playersInfo string, shipsFriendly, shipsEnemy []string) FullComponent {
+func InitFullComponent(game battleships.Game, themeFriendly, themeEnemy, themeGlobal Theme, playersInfo string, shipsFriendly, shipsEnemy []battleships.Field) FullComponent {
 	friendly := InitComponent(themeFriendly, shipsFriendly...)
 	enemy := InitComponent(themeEnemy, shipsEnemy...)
 	flexbox := stickers.NewFlexBox(0, 0)
@@ -118,7 +118,7 @@ func (c FullComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.flexbox.SetWidth(msg.Width)
 		c.flexbox.SetHeight(msg.Height)
 	case battleships.GameUpdateMsg:
-		if c.Game.GameStatus().ShouldFire {
+		if c.GameStatus().ShouldFire {
 			cmds = append(cmds, c.targetInput.Focus())
 		}
 	case battleships.PlayersUpdateMsg:
@@ -145,10 +145,10 @@ func (c FullComponent) View() string {
 
 	gameInfo := c.playersInfo
 
-	if c.Game.GameStatus().ShouldFire {
+	if c.GameStatus().ShouldFire {
 		friendlyState = c.themes.global.TextSecondary
 
-		gameInfo += "\n\nYour turn!\n\t" + c.themes.global.TextSecondary.Render(strconv.Itoa(c.Game.GameStatus().Timer)) + " seconds left to fire"
+		gameInfo += "\n\nYour turn!\n\t" + c.themes.global.TextSecondary.Render(strconv.Itoa(c.GameStatus().Timer)) + " seconds left to fire"
 	} else {
 		enemyState = c.themes.global.TextSecondary
 	}
@@ -161,7 +161,7 @@ func (c FullComponent) View() string {
 	c.flexbox.Row(1).Cell(1).SetContent(c.enemy.View())
 	c.flexbox.Row(1).Cell(2).SetContent(gameInfo)
 
-	if c.Game.GameStatus().ShouldFire {
+	if c.GameStatus().ShouldFire {
 		c.flexbox.Row(2).Cell(0).SetContent("\n\n\n" + c.targetInput.View() + "\n" + c.themes.global.TextSecondary.Render(c.displayError))
 	}
 

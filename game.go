@@ -8,8 +8,10 @@ type Game interface {
 	SetOpponent(player Player)
 	Opponent() Player
 
-	SetBoard(board []string)
-	Board() []string
+	SetBoard(board []Field)
+	Board() []Field
+	SetOpponentBoard(board []Field)
+	OpponentBoard() []Field
 
 	SetGameStatus(status GameStatus)
 	GameStatus() GameStatus
@@ -26,4 +28,18 @@ type GameUpdateMsg struct{}
 
 type PlayersUpdateMsg struct {
 	PlayersInfo string
+}
+
+type FieldState string
+
+const (
+	FieldStateShip FieldState = "ship"
+	FieldStateHit             = "hit"
+	FieldStateMiss            = "miss"
+	FieldStateSunk            = "sunk"
+)
+
+type Field struct {
+	Coord string
+	State FieldState
 }

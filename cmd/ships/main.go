@@ -81,7 +81,7 @@ func main() {
 
 	playersInfo := fmt.Sprintf(lipgloss.NewStyle().Italic(true).Render("Waiting for game..."))
 
-	boardComponent := board.InitFullComponent(game, theme, theme, globalTheme, playersInfo, game.Board(), []string{})
+	boardComponent := board.InitFullComponent(game, theme, theme, globalTheme, playersInfo, game.Board(), []battleships.Field{})
 
 	program := tea.NewProgram(boardComponent, tea.WithAltScreen())
 

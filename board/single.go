@@ -2,22 +2,23 @@ package board
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	battleships "github.com/kovansky/wp-battleships"
 	"strings"
 )
 
 type Component struct {
-	theme Theme
-	ships map[string]interface{}
+	theme  Theme
+	fields map[string]battleships.Field
 }
 
-func InitComponent(theme Theme, ships ...string) Component {
-	shipsMap := make(map[string]interface{}, len(ships))
+func InitComponent(theme Theme, fields ...battleships.Field) Component {
+	fieldsMap := make(map[string]battleships.Field, len(fields))
 
-	for _, ship := range ships {
-		shipsMap[strings.ToUpper(ship)] = nil
+	for _, ship := range fields {
+		fieldsMap[strings.ToUpper(ship.Coord)] = ship
 	}
 
-	return Component{theme: theme, ships: shipsMap}
+	return Component{theme: theme, fields: fieldsMap}
 }
 
 func (c Component) Init() tea.Cmd {
@@ -54,8 +55,8 @@ func (c Component) View() string {
 		for _, colLabel := range cols {
 			field := colLabel + rowLabel
 
-			if _, contains := c.ships[field]; contains {
-				builder.WriteString(c.theme.RenderShip())
+			if fieldDef, contains := c.fields[field]; contains {
+				builder.WriteString(c.theme.RenderField(fieldDef))
 				continue
 			}
 

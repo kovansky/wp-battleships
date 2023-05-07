@@ -1,6 +1,9 @@
 package board
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+	battleships "github.com/kovansky/wp-battleships"
+)
 
 type Brush struct {
 	char  byte
@@ -90,6 +93,19 @@ func (t Theme) SetMiss(brush Brush) Theme {
 
 func (t Theme) RenderBorder() string {
 	return t.Border.Style().Render(string(t.Border.Char()))
+}
+
+func (t Theme) RenderField(field battleships.Field) string {
+	switch field.State {
+	case battleships.FieldStateHit, battleships.FieldStateSunk:
+		return t.RenderHit()
+	case battleships.FieldStateMiss:
+		return t.RenderMiss()
+	case battleships.FieldStateShip:
+		return t.RenderShip()
+	default:
+		return "   "
+	}
 }
 
 func (t Theme) RenderShip() string {
