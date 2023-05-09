@@ -60,11 +60,16 @@ func (c *Client) UpdateBoard(game battleships.Game) error {
 		return err
 	}
 
-	game.SetBoard(boardRes.Board)
+	boardFields := make(map[string]battleships.FieldState, len(boardRes.Board))
+	for _, field := range boardRes.Board {
+		boardFields[field] = battleships.FieldStateShip
+	}
+
+	game.SetBoard(boardFields)
 	return nil
 }
 
-func (c *Client) GameStatus(game battleships.Game) error {
+func (c *Client) GameDesc(game battleships.Game) error {
 	method, endpoint := http.MethodGet, "/game/desc"
 	var body []byte
 
@@ -89,6 +94,74 @@ func (c *Client) GameStatus(game battleships.Game) error {
 	game.SetPlayer(NewPlayer(parsed.Nick, parsed.Desc))
 	game.SetOpponent(NewPlayer(parsed.Opponent, parsed.OppDesc))
 	return nil
+}
+
+func (c *Client) GameStatus(game battleships.Game) error {
+	method, endpoint := http.MethodGet, "/game"
+	var body []byte
+
+	res, _, err := c.request(method, endpoint, game.Key(), body)
+	if err != nil {
+		return err
+	}
+
+	var parsed battleships.GameGet
+	if err = json.Unmarshal(res, &parsed); err != nil {
+		return err
+	}
+
+	status := battleships.GameStatus{
+		Status:     parsed.GameStatus,
+		LastStatus: parsed.LastGameStatus,
+		ShouldFire: parsed.ShouldFire,
+		Timer:      parsed.Timer,
+	}
+
+	game.SetGameStatus(status)
+
+	board := game.Board()
+
+	if board != nil {
+		for _, shot := range parsed.OppShots {
+			if _, ok := board[shot]; ok &&
+				(board[shot] == battleships.FieldStateShip ||
+					board[shot] == battleships.FieldStateHit) {
+				board[shot] = battleships.FieldStateHit
+			} else {
+				board[shot] = battleships.FieldStateMiss
+			}
+		}
+		game.SetBoard(board)
+	}
+
+	return nil
+}
+
+func (c *Client) Fire(game battleships.Game, field string) (battleships.ShotState, error) {
+	method, endpoint := http.MethodPost, "/game/fire"
+	body, err := json.Marshal(struct {
+		Field string `json:"coord"`
+	}{field})
+	if err != nil {
+		return "", err
+	}
+
+	res, _, err := c.request(method, endpoint, game.Key(), body)
+	if err != nil {
+		return "", err
+	}
+
+	var parsed battleships.FireRes
+	if err = json.Unmarshal(res, &parsed); err != nil {
+		return "", err
+	}
+
+	err = c.GameStatus(game)
+	if err != nil {
+		return "", err
+	}
+
+	return parsed.Result, nil
 }
 
 func (c *Client) request(method, endpoint string, key string, body []byte) ([]byte, http.Header, error) {
