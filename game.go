@@ -30,6 +30,10 @@ type PlayersUpdateMsg struct {
 	PlayersInfo string
 }
 
+type PlayersListMsg struct {
+	Players []Player
+}
+
 type FieldState string
 
 const (

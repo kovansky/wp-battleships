@@ -21,10 +21,6 @@ func main() {
 	// Propagate build info
 	battleships.Version = Version
 
-	// Setup signal handlers
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	// Create logger
 	log = zerolog.
 		New(os.Stdout).
@@ -32,13 +28,16 @@ func main() {
 		Logger().
 		Output(zerolog.ConsoleWriter{Out: os.Stdout})
 
+	// Setup signal handlers
+	ctx, cancel := context.WithCancel(context.Background())
+	ctx = context.WithValue(ctx, battleships.ContextKeyLog, log)
+	defer cancel()
+
 	// Create client
 	battleships.ServerClient = ships.NewClient(ctx, "https://go-pjatk-server.fly.dev/api", &log)
 
 	// Initialize ships
 	game, err := battleships.ServerClient.InitGame(battleships.GamePost{
-		Desc:  "It's a mee, Mario",
-		Nick:  "Mario_the_Plumber",
 		Wpbot: false,
 	})
 	if err != nil {
@@ -56,9 +55,18 @@ func main() {
 		SetTextPrimary(lipgloss.NewStyle().Foreground(lipgloss.Color("#ffd700"))).
 		SetTextSecondary(lipgloss.NewStyle().Foreground(lipgloss.Color("#1e90ff")))
 
-	lobbyComponent := lobby.Create(globalTheme)
+	lobbyComponent := lobby.Create(ctx, globalTheme)
 
 	program := tea.NewProgram(lobbyComponent, tea.WithAltScreen())
+
+	go func() {
+		players := []battleships.Player{
+			*ships.NewPlayerWithWins("Luigi", "BBbbbbbbbb", 2),
+			*ships.NewPlayerWithWins("Mario", "Aaaaaaa", 1),
+		}
+
+		program.Send(battleships.PlayersListMsg{Players: players})
+	}()
 
 	if _, err := program.Run(); err != nil {
 		log.Error().Err(err).Msg("Could not draw board")
