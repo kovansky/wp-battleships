@@ -3,15 +3,16 @@ package board
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/tui"
 	"strings"
 )
 
 type Single struct {
-	theme  Theme
+	theme  tui.Theme
 	fields map[string]battleships.FieldState
 }
 
-func InitSingle(theme Theme, board map[string]battleships.FieldState) Single {
+func InitSingle(theme tui.Theme, board map[string]battleships.FieldState) Single {
 	return Single{theme: theme, fields: board}
 }
 

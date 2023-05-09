@@ -6,8 +6,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
-	"github.com/kovansky/wp-battleships/board"
 	"github.com/kovansky/wp-battleships/ships"
+	"github.com/kovansky/wp-battleships/tui"
+	board2 "github.com/kovansky/wp-battleships/tui/board"
 	"github.com/rs/zerolog"
 	"os"
 	"time"
@@ -60,32 +61,32 @@ func main() {
 	colRowStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#00ff7f")).
 		Bold(true)
-	theme := board.NewTheme().
+	theme := tui.NewTheme().
 		SetRows(colRowStyle).
 		SetCols(colRowStyle).
-		SetShip(board.NewBrush().
+		SetShip(tui.NewBrush().
 			SetChar('X').
 			SetStyle(lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#1e90ff")))).
-		SetHit(board.NewBrush().
+		SetHit(tui.NewBrush().
 			SetChar('X').
 			SetStyle(lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#00ff7f")))).
-		SetSunk(board.NewBrush().
+		SetSunk(tui.NewBrush().
 			SetChar('-').
 			SetStyle(lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#006332")))).
-		SetMiss(board.NewBrush().
+		SetMiss(tui.NewBrush().
 			SetChar('o').
 			SetStyle(lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#ff0000"))))
-	globalTheme := board.NewTheme().
+	globalTheme := tui.NewTheme().
 		SetTextPrimary(lipgloss.NewStyle().Foreground(lipgloss.Color("#ffd700"))).
 		SetTextSecondary(lipgloss.NewStyle().Foreground(lipgloss.Color("#1e90ff")))
 
 	playersInfo := fmt.Sprintf(lipgloss.NewStyle().Italic(true).Render("Waiting for game..."))
 
-	boardComponent := board.InitFull(game, theme, theme, globalTheme, playersInfo)
+	boardComponent := board2.InitFull(game, theme, theme, globalTheme, playersInfo)
 
 	program := tea.NewProgram(boardComponent, tea.WithAltScreen())
 

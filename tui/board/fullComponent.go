@@ -5,15 +5,16 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/tui"
 	"github.com/mbndr/figlet4go"
 	"strconv"
 	"strings"
 )
 
 type themes struct {
-	friendly Theme
-	enemy    Theme
-	global   Theme
+	friendly tui.Theme
+	enemy    tui.Theme
+	global   tui.Theme
 }
 
 type Full struct {
@@ -32,7 +33,7 @@ type Full struct {
 	battleships.Game
 }
 
-func InitFull(game battleships.Game, themeFriendly, themeEnemy, themeGlobal Theme, playersInfo string) Full {
+func InitFull(game battleships.Game, themeFriendly, themeEnemy, themeGlobal tui.Theme, playersInfo string) Full {
 	friendly := InitSingle(themeFriendly, game.Board())
 	opponent := InitSingle(themeEnemy, game.OpponentBoard())
 	flexbox := stickers.NewFlexBox(0, 0)

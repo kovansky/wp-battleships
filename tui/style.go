@@ -1,4 +1,4 @@
-package board
+package tui
 
 import (
 	"github.com/charmbracelet/lipgloss"
