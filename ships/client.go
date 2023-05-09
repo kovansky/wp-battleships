@@ -137,6 +137,77 @@ func (c *Client) GameStatus(game battleships.Game) error {
 	return nil
 }
 
+func (c *Client) Refresh(game battleships.Game) error {
+	method, endpoint := http.MethodGet, "/game/refresh"
+	var body []byte
+
+	_, _, err := c.request(method, endpoint, game.Key(), body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) PlayerStats(nick string) (battleships.PlayerStats, error) {
+	method := http.MethodGet
+	endpoint, err := url.JoinPath("/game/stats", nick)
+	if err != nil {
+		return battleships.PlayerStats{}, err
+	}
+
+	var body []byte
+
+	res, _, err := c.request(method, endpoint, "", body)
+	if err != nil {
+		return battleships.PlayerStats{}, err
+	}
+
+	var parsed struct {
+		Stats battleships.PlayerStats `json:"stats"`
+	}
+	if err = json.Unmarshal(res, &parsed); err != nil {
+		return battleships.PlayerStats{}, err
+	}
+
+	return parsed.Stats, nil
+}
+
+func (c *Client) ListPlayers() ([]battleships.Player, error) {
+	var players []battleships.Player
+
+	method, endpoint := http.MethodGet, "/game/list"
+	var body []byte
+
+	res, _, err := c.request(method, endpoint, "", body)
+	if err != nil {
+		return players, err
+	}
+
+	type responseType struct {
+		Nick string `json:"nick"`
+	}
+	var parsed []struct {
+		Nick string `json:"nick"`
+	}
+	if err = json.Unmarshal(res, &parsed); err != nil {
+		return players, err
+	}
+
+	parsed = append(parsed, responseType{Nick: "WP_Bot"})
+
+	for _, player := range parsed {
+		player, err := c.PlayerStats(player.Nick)
+		if err != nil {
+			continue
+		}
+
+		players = append(players, NewPlayerFromStats(player))
+	}
+
+	return players, nil
+}
+
 func (c *Client) Fire(game battleships.Game, field string) (battleships.ShotState, error) {
 	method, endpoint := http.MethodPost, "/game/fire"
 	body, err := json.Marshal(struct {

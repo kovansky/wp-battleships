@@ -2,9 +2,16 @@ package battleships
 
 type Client interface {
 	InitGame(data GamePost) (Game, error)
+
 	UpdateBoard(game Game) error
+
 	GameStatus(game Game) error
 	GameDesc(game Game) error
+
+	Refresh(game Game) error
+
+	PlayerStats(nick string) (PlayerStats, error)
+	ListPlayers() ([]Player, error)
 
 	Fire(game Game, field string) (ShotState, error)
 }
@@ -57,4 +64,14 @@ type BoardGet struct {
 
 type FireRes struct {
 	Result ShotState `json:"result"`
+}
+
+type PlayerStats struct {
+	Nick string `json:"nick"`
+
+	Games  int `json:"games"`
+	Wins   int `json:"wins"`
+	Points int `json:"points"`
+
+	Rank int `json:"rank"`
 }

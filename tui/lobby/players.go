@@ -19,19 +19,20 @@ type Players struct {
 	Width  int
 	Height int
 
-	selected string
+	focused        int
+	selected       string
+	initialPlayers []battleships.Player
 
 	table *stickers.Table
 }
 
-func CreatePlayers(ctx context.Context, theme tui.Theme) Players {
-	table := stickers.NewTable(0, 0, []string{
-		"Nickname",
-		"Description",
-		"Wins",
-	})
-
+func CreatePlayers(ctx context.Context, theme tui.Theme, initialPlayers []battleships.Player) Players {
 	log := ctx.Value(battleships.ContextKeyLog).(zerolog.Logger)
+
+	table, err := initializeTable(theme, initialPlayers...)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to initialize table")
+	}
 
 	return Players{
 		log:   log,
@@ -41,21 +42,6 @@ func CreatePlayers(ctx context.Context, theme tui.Theme) Players {
 }
 
 func (c Players) Init() tea.Cmd {
-	// Types
-	var (
-		s string
-		i int
-	)
-	c.table, _ = c.table.SetTypes([]any{s, s, i}...)
-	c.table.SetRatio([]int{3, 6, 1}).SetMinWidth([]int{5, 10, 3})
-
-	c.table.SetStyles(map[stickers.TableStyleKey]lipgloss.Style{
-		stickers.TableCellCursorStyleKey: lipgloss.NewStyle().
-			Background(c.theme.TextPrimary.GetForeground()).
-			Foreground(lipgloss.Color("#383838")),
-		stickers.TableRowsCursorStyleKey: lipgloss.NewStyle(),
-	})
-
 	return nil
 }
 
@@ -67,8 +53,10 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return c, tea.Quit
 		case "down":
 			c.table.CursorDown()
+			_, c.focused = c.table.GetCursorLocation()
 		case "up":
 			c.table.CursorUp()
+			_, c.focused = c.table.GetCursorLocation()
 		case "enter", " ":
 			c.selected = c.table.GetCursorValue()
 		case "backspace":
@@ -86,18 +74,18 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			SetWidth(c.Width).
 			SetHeight(c.Height)
 	case battleships.PlayersListMsg:
-		var (
-			playersTable [][]any
-			err          error
-		)
-
-		for _, player := range msg.Players {
-			playersTable = append(playersTable, []any{player.Name(), player.Description(), player.Wins()})
-		}
-
-		c.table, err = c.table.AddRows(playersTable)
+		var err error
+		c.table, err = initializeTable(c.theme, msg.Players...)
 		if err != nil {
 			c.log.Error().Err(err).Msg("failed to add rows to table")
+		}
+		c.table.
+			SetWidth(c.Width).
+			SetHeight(c.Height)
+
+		// Move cursor to it's focused position
+		for i := 0; i < c.focused; i++ {
+			c.table.CursorDown()
 		}
 	}
 
@@ -106,6 +94,43 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (c Players) View() string {
 	return c.table.Render()
+}
+
+func initializeTable(theme tui.Theme, players ...battleships.Player) (*stickers.Table, error) {
+	table := stickers.NewTable(0, 0, []string{
+		"Nickname",
+		"Points",
+		"Wins",
+		"Games",
+	})
+
+	// Types
+	var (
+		s string
+		i int
+	)
+	table, _ = table.SetTypes([]any{s, i, i, i}...)
+	table.SetRatio([]int{6, 2, 1, 1}).SetMinWidth([]int{10, 4, 3, 3})
+
+	table.SetStyles(map[stickers.TableStyleKey]lipgloss.Style{
+		stickers.TableCellCursorStyleKey: lipgloss.NewStyle().
+			Background(theme.TextPrimary.GetForeground()).
+			Foreground(lipgloss.Color("#383838")),
+		stickers.TableRowsCursorStyleKey: lipgloss.NewStyle(),
+	})
+
+	var (
+		playersTable [][]any
+		err          error
+	)
+
+	for _, player := range players {
+		playersTable = append(playersTable, []any{player.Name(), player.Points(), player.Wins(), player.Games()})
+	}
+
+	table, err = table.AddRows(playersTable)
+
+	return table, err
 }
 
 func (c Players) filterWithStr(key string) {

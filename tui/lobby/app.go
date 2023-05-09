@@ -15,15 +15,16 @@ type Lobby struct {
 
 	theme tui.Theme
 
-	subcomponents map[string]tea.Model
+	subcomponents  map[string]tea.Model
+	initialPlayers []battleships.Player
 
 	asciiRender *figlet4go.AsciiRender
 }
 
-func Create(ctx context.Context, theme tui.Theme) Lobby {
+func Create(ctx context.Context, theme tui.Theme, initialPlayers []battleships.Player) Lobby {
 	asciiRender := figlet4go.NewAsciiRender()
 	header := CreateHeader("Battleships", theme, asciiRender)
-	table := CreatePlayers(ctx, theme)
+	table := CreatePlayers(ctx, theme, initialPlayers)
 
 	log := ctx.Value(battleships.ContextKeyLog).(zerolog.Logger)
 
@@ -35,6 +36,7 @@ func Create(ctx context.Context, theme tui.Theme) Lobby {
 			"header": header,
 			"table":  table,
 		},
+		initialPlayers: initialPlayers,
 	}
 }
 
