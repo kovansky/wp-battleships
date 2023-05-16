@@ -8,7 +8,7 @@ import (
 	battleships "github.com/kovansky/wp-battleships"
 	"github.com/kovansky/wp-battleships/ships"
 	"github.com/kovansky/wp-battleships/tui"
-	board2 "github.com/kovansky/wp-battleships/tui/board"
+	"github.com/kovansky/wp-battleships/tui/board"
 	"github.com/rs/zerolog"
 	"os"
 	"time"
@@ -86,7 +86,7 @@ func main() {
 
 	playersInfo := fmt.Sprintf(lipgloss.NewStyle().Italic(true).Render("Waiting for game..."))
 
-	boardComponent := board2.InitFull(game, theme, theme, globalTheme, playersInfo)
+	boardComponent := board.InitFull(game, theme, theme, globalTheme, playersInfo)
 
 	program := tea.NewProgram(boardComponent, tea.WithAltScreen())
 

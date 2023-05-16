@@ -7,4 +7,5 @@ const (
 var (
 	Version      string
 	ServerClient Client
+	GameInstance Game
 )

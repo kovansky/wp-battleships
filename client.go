@@ -2,6 +2,7 @@ package battleships
 
 type Client interface {
 	InitGame(data GamePost) (Game, error)
+	Abandon(game Game) error
 
 	UpdateBoard(game Game) error
 

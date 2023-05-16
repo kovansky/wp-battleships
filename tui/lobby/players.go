@@ -2,11 +2,13 @@ package lobby
 
 import (
 	"context"
+	"fmt"
 	"github.com/76creates/stickers"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
 	"github.com/kovansky/wp-battleships/tui"
+	"github.com/kovansky/wp-battleships/tui/board"
 	"github.com/rs/zerolog"
 	"unicode"
 )
@@ -59,6 +61,45 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			_, c.focused = c.table.GetCursorLocation()
 		case "enter", " ":
 			c.selected = c.table.GetCursorValue()
+
+			var (
+				game battleships.Game
+				err  error
+			)
+			if c.selected == "WP_Bot" {
+				game, err = battleships.ServerClient.InitGame(battleships.GamePost{
+					Wpbot: true,
+				})
+				if err != nil {
+					c.log.Fatal().Err(err).Msg("Couldn't initialize game")
+				}
+			} else {
+				game, err = battleships.ServerClient.InitGame(battleships.GamePost{
+					TargetNick: c.selected,
+				})
+				if err != nil {
+					c.log.Fatal().Err(err).Msg("Couldn't initialize game")
+				}
+			}
+
+			battleships.GameInstance = game
+
+			err = battleships.ServerClient.UpdateBoard(battleships.GameInstance)
+			if err != nil {
+				c.log.Fatal().Err(err).Msg("Couldn't update the game board")
+			}
+			err = battleships.ServerClient.GameStatus(battleships.GameInstance)
+			if err != nil {
+				c.log.Fatal().Err(err).Msg("Couldn't update the game status")
+			}
+
+			gameBoard := board.InitFull(game, c.theme, c.theme, c.theme, fmt.Sprintf(lipgloss.NewStyle().Italic(true).Render("Waiting for game...")))
+			return c, func() tea.Msg {
+				return tui.ApplicationStageChangeMsg{
+					Stage: tui.StageGame,
+					Board: gameBoard,
+				}
+			}
 		case "backspace":
 			c.filterWithStr(msg.String())
 		default:

@@ -46,6 +46,18 @@ func (c *Client) InitGame(data battleships.GamePost) (battleships.Game, error) {
 	return game, nil
 }
 
+func (c *Client) Abandon(game battleships.Game) error {
+	method, endpoint := http.MethodGet, "/game/abandon"
+	var body []byte
+
+	_, _, err := c.request(method, endpoint, game.Key(), body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *Client) UpdateBoard(game battleships.Game) error {
 	method, endpoint := http.MethodGet, "/game/board"
 	var body []byte
