@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/routines"
 	"github.com/kovansky/wp-battleships/ships"
 	"github.com/kovansky/wp-battleships/tui"
 	"github.com/kovansky/wp-battleships/tui/lobby"
@@ -86,27 +87,11 @@ func main() {
 		program.Send(msg)
 	}
 
-	ticker := time.NewTicker(5 * time.Second)
-	quit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				players, err := battleships.ServerClient.ListPlayers()
-				if err != nil {
-					log.Fatal().Err(err).Msg("Couldn't list players")
-				}
-
-				program.Send(battleships.PlayersListMsg{Players: players})
-			case <-quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+	battleships.Routines.Lobby = routines.CreateLobby(ctx, 5*time.Second, make(chan struct{}))
+	go battleships.Routines.Lobby.Run()
 
 	if _, err := program.Run(); err != nil {
-		close(quit)
+		battleships.Routines.Lobby.Quit()
 		log.Error().Err(err).Msg("Could not draw board")
 	}
 }

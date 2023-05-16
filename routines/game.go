@@ -31,7 +31,6 @@ func CreateGame(ctx context.Context, duration time.Duration, theme battleships.T
 }
 
 func (g Game) Run() {
-
 	ticker := time.NewTicker(g.duration)
 	for {
 		select {
@@ -65,5 +64,13 @@ func (g Game) Run() {
 			ticker.Stop()
 			return
 		}
+	}
+}
+
+func (g Game) Quit() {
+	select {
+	case <-g.quit:
+	default:
+		close(g.quit)
 	}
 }

@@ -13,7 +13,8 @@ var (
 	ServerClient Client
 	GameInstance Game
 
-	ProgramMessage func(msg tea.Msg)
+	Themes   GameThemes
+	Routines GameRoutines
 
-	Themes GameThemes
+	ProgramMessage func(msg tea.Msg)
 )
