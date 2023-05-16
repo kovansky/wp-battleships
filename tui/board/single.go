@@ -3,16 +3,15 @@ package board
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	battleships "github.com/kovansky/wp-battleships"
-	"github.com/kovansky/wp-battleships/tui"
 	"strings"
 )
 
 type Single struct {
-	theme  tui.Theme
+	theme  battleships.Theme
 	fields map[string]battleships.FieldState
 }
 
-func InitSingle(theme tui.Theme, board map[string]battleships.FieldState) Single {
+func InitSingle(theme battleships.Theme, board map[string]battleships.FieldState) Single {
 	return Single{theme: theme, fields: board}
 }
 
@@ -48,7 +47,7 @@ func (c *Single) View() string {
 			label = sep + rowLabel
 		}
 
-		builder.WriteString(c.theme.Rows.Render(label))
+		builder.WriteString(c.theme.Rows().Render(label))
 		builder.WriteString(strings.Repeat(sep, 1))
 
 		for _, colLabel := range cols {
@@ -67,7 +66,7 @@ func (c *Single) View() string {
 
 	builder.WriteString(strings.Repeat(sep, 3))
 	for _, colLabel := range cols {
-		builder.WriteString(c.theme.Cols.Render(colLabel) + sep)
+		builder.WriteString(c.theme.Cols().Render(colLabel) + sep)
 	}
 
 	return builder.String()

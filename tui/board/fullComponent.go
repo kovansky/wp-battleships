@@ -5,16 +5,15 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	battleships "github.com/kovansky/wp-battleships"
-	"github.com/kovansky/wp-battleships/tui"
 	"github.com/mbndr/figlet4go"
 	"strconv"
 	"strings"
 )
 
 type themes struct {
-	friendly tui.Theme
-	enemy    tui.Theme
-	global   tui.Theme
+	friendly battleships.Theme
+	enemy    battleships.Theme
+	global   battleships.Theme
 }
 
 type Full struct {
@@ -33,7 +32,7 @@ type Full struct {
 	battleships.Game
 }
 
-func InitFull(game battleships.Game, themeFriendly, themeEnemy, themeGlobal tui.Theme, playersInfo string) Full {
+func InitFull(game battleships.Game, themeFriendly, themeEnemy, themeGlobal battleships.Theme, playersInfo string) Full {
 	friendly := InitSingle(themeFriendly, game.Board())
 	opponent := InitSingle(themeEnemy, game.OpponentBoard())
 	flexbox := stickers.NewFlexBox(0, 0)
@@ -167,36 +166,36 @@ func (c Full) View() string {
 	enemyRender, _ := c.asciiRender.Render("Enemy")
 	gameInfoRender, _ := c.asciiRender.Render("Game Info")
 
-	friendlyState := c.themes.global.TextPrimary
-	enemyState := c.themes.global.TextPrimary
+	friendlyState := c.themes.global.TextPrimary()
+	enemyState := c.themes.global.TextPrimary()
 
 	gameInfo := c.playersInfo
 
 	if c.GameStatus().ShouldFire {
-		friendlyState = c.themes.global.TextSecondary
+		friendlyState = c.themes.global.TextSecondary()
 
-		gameInfo += "\n\nYour turn!\n\t" + c.themes.global.TextSecondary.Render(strconv.Itoa(c.GameStatus().Timer)) + " seconds left to fire"
+		gameInfo += "\n\nYour turn!\n\t" + c.themes.global.TextSecondary().Render(strconv.Itoa(c.GameStatus().Timer)) + " seconds left to fire"
 	} else {
-		enemyState = c.themes.global.TextSecondary
+		enemyState = c.themes.global.TextSecondary()
 	}
 
 	c.flexbox.Row(0).Cell(0).SetContent(friendlyState.Render(friendlyRender))
 	c.flexbox.Row(0).Cell(1).SetContent(enemyState.Render(enemyRender))
-	c.flexbox.Row(0).Cell(2).SetContent(c.themes.global.TextPrimary.Render(gameInfoRender))
+	c.flexbox.Row(0).Cell(2).SetContent(c.themes.global.TextPrimary().Render(gameInfoRender))
 
 	c.flexbox.Row(1).Cell(0).SetContent(c.friendly.View())
 	c.flexbox.Row(1).Cell(1).SetContent(c.opponent.View())
 	c.flexbox.Row(1).Cell(2).SetContent(gameInfo)
 
 	if c.GameStatus().Status == battleships.StatusGameInProgress && c.GameStatus().ShouldFire {
-		c.flexbox.Row(2).Cell(0).SetContent("\n\n\n" + c.targetInput.View() + "\n" + c.themes.global.TextSecondary.Render(c.displayError))
+		c.flexbox.Row(2).Cell(0).SetContent("\n\n\n" + c.targetInput.View() + "\n" + c.themes.global.TextSecondary().Render(c.displayError))
 	} else if c.GameStatus().Status == battleships.StatusEnded {
 		victory := c.GameStatus().LastStatus == battleships.StatusWin
 		endString, _ := c.asciiRender.Render("You've won!")
-		endColor := c.themes.global.TextPrimary
+		endColor := c.themes.global.TextPrimary()
 		if !victory {
 			endString, _ = c.asciiRender.Render("You've lost :(")
-			endColor = c.themes.global.TextSecondary
+			endColor = c.themes.global.TextSecondary()
 		}
 
 		c.flexbox.Row(2).Cell(0).SetContent(endColor.Render(endString))

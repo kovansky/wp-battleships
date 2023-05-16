@@ -45,14 +45,46 @@ func main() {
 		log.Fatal().Err(err).Msg("Couldn't list players")
 	}
 
+	colRowStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#00ff7f")).
+		Bold(true)
+	theme := tui.NewTheme().
+		SetRows(colRowStyle).
+		SetCols(colRowStyle).
+		SetShip(tui.NewBrush().
+			SetChar('X').
+			SetStyle(lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#1e90ff")))).
+		SetHit(tui.NewBrush().
+			SetChar('X').
+			SetStyle(lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#00ff7f")))).
+		SetSunk(tui.NewBrush().
+			SetChar('-').
+			SetStyle(lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#006332")))).
+		SetMiss(tui.NewBrush().
+			SetChar('o').
+			SetStyle(lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#ff0000"))))
 	globalTheme := tui.NewTheme().
 		SetTextPrimary(lipgloss.NewStyle().Foreground(lipgloss.Color("#ffd700"))).
 		SetTextSecondary(lipgloss.NewStyle().Foreground(lipgloss.Color("#1e90ff")))
 
+	battleships.Themes = battleships.GameThemes{
+		Player: theme,
+		Enemy:  theme,
+		Global: globalTheme,
+	}
+
 	lobbyComponent := lobby.Create(ctx, globalTheme, players)
-	applicationWrapper := wrapper.Create(ctx, lobbyComponent)
+	applicationWrapper := wrapper.Create(ctx, globalTheme, lobbyComponent)
 
 	program := tea.NewProgram(applicationWrapper, tea.WithAltScreen())
+
+	battleships.ProgramMessage = func(msg tea.Msg) {
+		program.Send(msg)
+	}
 
 	ticker := time.NewTicker(5 * time.Second)
 	quit := make(chan struct{})
@@ -74,15 +106,7 @@ func main() {
 	}()
 
 	if _, err := program.Run(); err != nil {
+		close(quit)
 		log.Error().Err(err).Msg("Could not draw board")
 	}
-}
-
-func removeFromSlice[T any](s []T, i int) []T {
-	if i < 0 || i >= len(s) {
-		return s
-	}
-
-	s[i] = s[len(s)-1]
-	return s[:len(s)-1]
 }

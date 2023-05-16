@@ -4,17 +4,21 @@ import (
 	"context"
 	tea "github.com/charmbracelet/bubbletea"
 	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/routines"
 	"github.com/kovansky/wp-battleships/tui"
 	"github.com/kovansky/wp-battleships/tui/board"
 	"github.com/kovansky/wp-battleships/tui/lobby"
 	"github.com/mbndr/figlet4go"
 	"github.com/rs/zerolog"
+	"time"
 )
 
 type Application struct {
+	ctx context.Context
 	log zerolog.Logger
 
 	stage tui.Stage
+	theme battleships.Theme
 
 	lobby lobby.Lobby
 	game  board.Full
@@ -22,15 +26,19 @@ type Application struct {
 	width, height int
 
 	asciiRender *figlet4go.AsciiRender
+
+	quit chan struct{}
 }
 
-func Create(ctx context.Context, lobbyApp lobby.Lobby) Application {
+func Create(ctx context.Context, theme battleships.Theme, lobbyApp lobby.Lobby) Application {
 	asciiRender := figlet4go.NewAsciiRender()
 
 	log := ctx.Value(battleships.ContextKeyLog).(zerolog.Logger)
 
 	return Application{
+		ctx:         ctx,
 		log:         log,
+		theme:       theme,
 		stage:       tui.StageLobby,
 		lobby:       lobbyApp,
 		asciiRender: asciiRender,
@@ -56,6 +64,8 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
+			close(c.quit)
+
 			return c, tea.Quit
 		}
 	case tui.ApplicationStageChangeMsg:
@@ -72,15 +82,21 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			})
 			c.game = tmp.(board.Full)
 			cmds = append(cmds, cmd)
+
+			c.quit = make(chan struct{})
+			gameRoutine := routines.CreateGame(c.ctx, 1*time.Second, c.theme, c.quit)
+			go gameRoutine.Run()
 		}
 	case tea.WindowSizeMsg:
 		c.width = msg.Width
 		c.height = msg.Height
 	}
 
-	tmp, cmd = c.lobby.Update(msg)
-	c.lobby = tmp.(lobby.Lobby)
-	cmds = append(cmds, cmd)
+	if c.stage == tui.StageLobby {
+		tmp, cmd = c.lobby.Update(msg)
+		c.lobby = tmp.(lobby.Lobby)
+		cmds = append(cmds, cmd)
+	}
 
 	if c.stage == tui.StageGame {
 		tmp, cmd = c.game.Update(msg)

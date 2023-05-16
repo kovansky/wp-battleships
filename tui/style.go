@@ -18,7 +18,7 @@ func (b Brush) Char() byte {
 	return b.char
 }
 
-func (b Brush) SetChar(char byte) Brush {
+func (b Brush) SetChar(char byte) battleships.Brush {
 	b.char = char
 	return b
 }
@@ -27,79 +27,114 @@ func (b Brush) Style() lipgloss.Style {
 	return b.style
 }
 
-func (b Brush) SetStyle(style lipgloss.Style) Brush {
+func (b Brush) SetStyle(style lipgloss.Style) battleships.Brush {
 	b.style = style
 	return b
 }
 
 type Theme struct {
-	Rows          lipgloss.Style
-	Cols          lipgloss.Style
-	TextPrimary   lipgloss.Style
-	TextSecondary lipgloss.Style
-	Border        Brush
-	Ship          Brush
-	Hit           Brush
-	Sunk          Brush
-	Miss          Brush
+	rows          lipgloss.Style
+	cols          lipgloss.Style
+	textPrimary   lipgloss.Style
+	textSecondary lipgloss.Style
+	border        battleships.Brush
+	ship          battleships.Brush
+	hit           battleships.Brush
+	sunk          battleships.Brush
+	miss          battleships.Brush
 }
 
-func NewTheme() Theme {
+func NewTheme() battleships.Theme {
 	return Theme{}
 }
 
-func (t Theme) SetRows(style lipgloss.Style) Theme {
-	t.Rows = style
+func (t Theme) Rows() lipgloss.Style {
+	return t.rows
+}
+
+func (t Theme) SetRows(style lipgloss.Style) battleships.Theme {
+	t.rows = style
 	return t
 }
 
-func (t Theme) SetCols(style lipgloss.Style) Theme {
-	t.Cols = style
+func (t Theme) Cols() lipgloss.Style {
+	return t.cols
+}
+
+func (t Theme) SetCols(style lipgloss.Style) battleships.Theme {
+	t.cols = style
 	return t
 }
 
-func (t Theme) SetTextPrimary(style lipgloss.Style) Theme {
-	t.TextPrimary = style
+func (t Theme) TextPrimary() lipgloss.Style {
+	return t.textPrimary
+}
+
+func (t Theme) SetTextPrimary(style lipgloss.Style) battleships.Theme {
+	t.textPrimary = style
 	return t
 }
 
-func (t Theme) SetTextSecondary(style lipgloss.Style) Theme {
-	t.TextSecondary = style
+func (t Theme) TextSecondary() lipgloss.Style {
+	return t.textSecondary
+}
+
+func (t Theme) SetTextSecondary(style lipgloss.Style) battleships.Theme {
+	t.textSecondary = style
 	return t
 }
 
-func (t Theme) SetBorder(brush Brush) Theme {
+func (t Theme) Border() battleships.Brush {
+	return t.border
+}
+
+func (t Theme) SetBorder(brush battleships.Brush) battleships.Theme {
 	brush = brush.SetStyle(brush.Style().PaddingRight(1))
-	t.Border = brush
+	t.border = brush
 	return t
 }
 
-func (t Theme) SetShip(brush Brush) Theme {
+func (t Theme) Ship() battleships.Brush {
+	return t.ship
+
+}
+func (t Theme) SetShip(brush battleships.Brush) battleships.Theme {
 	brush = brush.SetStyle(brush.Style().PaddingRight(1))
-	t.Ship = brush
+	t.ship = brush
 	return t
 }
 
-func (t Theme) SetHit(brush Brush) Theme {
+func (t Theme) Hit() battleships.Brush {
+	return t.hit
+
+}
+func (t Theme) SetHit(brush battleships.Brush) battleships.Theme {
 	brush = brush.SetStyle(brush.Style().PaddingRight(1))
-	t.Hit = brush
+	t.hit = brush
 	return t
 }
 
-func (t Theme) SetSunk(brush Brush) Theme {
+func (t Theme) Sunk() battleships.Brush {
+	return t.sunk
+
+}
+func (t Theme) SetSunk(brush battleships.Brush) battleships.Theme {
 	brush = brush.SetStyle(brush.Style().PaddingRight(1))
-	t.Sunk = brush
+	t.sunk = brush
 	return t
 }
 
-func (t Theme) SetMiss(brush Brush) Theme {
+func (t Theme) Miss() battleships.Brush {
+	return t.miss
+}
+func (t Theme) SetMiss(brush battleships.Brush) battleships.Theme {
 	brush = brush.SetStyle(brush.Style().PaddingRight(1))
-	t.Miss = brush
+	t.miss = brush
 	return t
 }
 
 func (t Theme) RenderBorder() string {
-	return t.Border.Style().Render(string(t.Border.Char()))
+	return t.border.Style().Render(string(t.border.Char()))
 }
 
 func (t Theme) RenderField(state battleships.FieldState) string {
@@ -118,17 +153,17 @@ func (t Theme) RenderField(state battleships.FieldState) string {
 }
 
 func (t Theme) RenderShip() string {
-	return t.Ship.Style().Render(string(t.Ship.Char()))
+	return t.ship.Style().Render(string(t.ship.Char()))
 }
 
 func (t Theme) RenderHit() string {
-	return t.Hit.Style().Render(string(t.Hit.Char()))
+	return t.hit.Style().Render(string(t.hit.Char()))
 }
 
 func (t Theme) RenderSunk() string {
-	return t.Sunk.Style().Render(string(t.Sunk.Char()))
+	return t.sunk.Style().Render(string(t.sunk.Char()))
 }
 
 func (t Theme) RenderMiss() string {
-	return t.Miss.Style().Render(string(t.Miss.Char()))
+	return t.miss.Style().Render(string(t.miss.Char()))
 }

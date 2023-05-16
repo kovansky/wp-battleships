@@ -16,7 +16,7 @@ import (
 type Players struct {
 	log zerolog.Logger
 
-	theme tui.Theme
+	theme battleships.Theme
 
 	Width  int
 	Height int
@@ -28,7 +28,7 @@ type Players struct {
 	table *stickers.Table
 }
 
-func CreatePlayers(ctx context.Context, theme tui.Theme, initialPlayers []battleships.Player) Players {
+func CreatePlayers(ctx context.Context, theme battleships.Theme, initialPlayers []battleships.Player) Players {
 	log := ctx.Value(battleships.ContextKeyLog).(zerolog.Logger)
 
 	table, err := initializeTable(theme, initialPlayers...)
@@ -82,18 +82,18 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
-			battleships.GameInstance = game
-
-			err = battleships.ServerClient.UpdateBoard(battleships.GameInstance)
+			err = battleships.ServerClient.UpdateBoard(game)
 			if err != nil {
 				c.log.Fatal().Err(err).Msg("Couldn't update the game board")
 			}
-			err = battleships.ServerClient.GameStatus(battleships.GameInstance)
+			err = battleships.ServerClient.GameStatus(game)
 			if err != nil {
 				c.log.Fatal().Err(err).Msg("Couldn't update the game status")
 			}
 
-			gameBoard := board.InitFull(game, c.theme, c.theme, c.theme, fmt.Sprintf(lipgloss.NewStyle().Italic(true).Render("Waiting for game...")))
+			battleships.GameInstance = game
+
+			gameBoard := board.InitFull(battleships.GameInstance, battleships.Themes.Player, battleships.Themes.Enemy, battleships.Themes.Global, fmt.Sprintf(lipgloss.NewStyle().Italic(true).Render("Waiting for game...")))
 			return c, func() tea.Msg {
 				return tui.ApplicationStageChangeMsg{
 					Stage: tui.StageGame,
@@ -137,7 +137,7 @@ func (c Players) View() string {
 	return c.table.Render()
 }
 
-func initializeTable(theme tui.Theme, players ...battleships.Player) (*stickers.Table, error) {
+func initializeTable(theme battleships.Theme, players ...battleships.Player) (*stickers.Table, error) {
 	table := stickers.NewTable(0, 0, []string{
 		"Nickname",
 		"Points",
@@ -155,7 +155,7 @@ func initializeTable(theme tui.Theme, players ...battleships.Player) (*stickers.
 
 	table.SetStyles(map[stickers.TableStyleKey]lipgloss.Style{
 		stickers.TableCellCursorStyleKey: lipgloss.NewStyle().
-			Background(theme.TextPrimary.GetForeground()).
+			Background(theme.TextPrimary().GetForeground()).
 			Foreground(lipgloss.Color("#383838")),
 		stickers.TableRowsCursorStyleKey: lipgloss.NewStyle(),
 	})

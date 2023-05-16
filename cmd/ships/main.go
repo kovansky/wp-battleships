@@ -109,10 +109,10 @@ func main() {
 
 					playersInfo = fmt.Sprintf("%s %s %s\n"+
 						"%s %s %s",
-						globalTheme.TextPrimary.Copy().Bold(true).Render("YOU"),
+						globalTheme.TextPrimary().Copy().Bold(true).Render("YOU"),
 						game.Player().Name(),
 						lipgloss.NewStyle().Italic(true).Render("("+game.Player().Description()+")"),
-						globalTheme.TextPrimary.Copy().Bold(true).Render("ENEMY"),
+						globalTheme.TextPrimary().Copy().Bold(true).Render("ENEMY"),
 						game.Opponent().Name(),
 						lipgloss.NewStyle().Italic(true).Render("("+game.Opponent().Description()+")"),
 					)

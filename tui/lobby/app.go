@@ -5,7 +5,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
-	"github.com/kovansky/wp-battleships/tui"
 	"github.com/mbndr/figlet4go"
 	"github.com/rs/zerolog"
 )
@@ -13,7 +12,7 @@ import (
 type Lobby struct {
 	log zerolog.Logger
 
-	theme tui.Theme
+	theme battleships.Theme
 
 	subcomponents  map[string]tea.Model
 	initialPlayers []battleships.Player
@@ -21,7 +20,7 @@ type Lobby struct {
 	asciiRender *figlet4go.AsciiRender
 }
 
-func Create(ctx context.Context, theme tui.Theme, initialPlayers []battleships.Player) Lobby {
+func Create(ctx context.Context, theme battleships.Theme, initialPlayers []battleships.Player) Lobby {
 	asciiRender := figlet4go.NewAsciiRender()
 	header := CreateHeader("Battleships", theme, asciiRender)
 	table := CreatePlayers(ctx, theme, initialPlayers)

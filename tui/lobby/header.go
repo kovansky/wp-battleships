@@ -3,13 +3,13 @@ package lobby
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/kovansky/wp-battleships/tui"
+	battleships "github.com/kovansky/wp-battleships"
 	"github.com/mbndr/figlet4go"
 )
 
 type Header struct {
 	Text  string
-	theme tui.Theme
+	theme battleships.Theme
 
 	blockStyle lipgloss.Style
 
@@ -19,7 +19,7 @@ type Header struct {
 	asciiRender *figlet4go.AsciiRender
 }
 
-func CreateHeader(text string, theme tui.Theme, asciiRender *figlet4go.AsciiRender) Header {
+func CreateHeader(text string, theme battleships.Theme, asciiRender *figlet4go.AsciiRender) Header {
 	return Header{
 		Text:        text,
 		theme:       theme,
@@ -35,7 +35,7 @@ func (c Header) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		c.width = msg.Width
-		c.blockStyle = c.theme.TextPrimary.Copy().
+		c.blockStyle = c.theme.TextPrimary().Copy().
 			Width(c.width).
 			Align(lipgloss.Center).
 			PaddingBottom(2)
