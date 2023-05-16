@@ -64,7 +64,7 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			close(c.quit)
+			battleships.Routines.Game.Quit()
 			battleships.Routines.Lobby.Quit()
 
 			return c, tea.Quit
@@ -85,8 +85,8 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 
 			c.quit = make(chan struct{})
-			gameRoutine := routines.CreateGame(c.ctx, 1*time.Second, c.theme, c.quit)
-			go gameRoutine.Run()
+			battleships.Routines.Game = routines.CreateGame(c.ctx, 1*time.Second, c.theme, c.quit)
+			go battleships.Routines.Game.Run()
 			battleships.Routines.Lobby.Quit()
 		}
 	case tea.WindowSizeMsg:

@@ -15,6 +15,8 @@ type Game interface {
 
 	SetGameStatus(status GameStatus)
 	GameStatus() GameStatus
+
+	Statistics() *Statistics
 }
 
 type GameStatus struct {

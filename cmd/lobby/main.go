@@ -89,6 +89,7 @@ func main() {
 
 	battleships.Routines.Lobby = routines.CreateLobby(ctx, 5*time.Second, make(chan struct{}))
 	go battleships.Routines.Lobby.Run()
+	battleships.Routines.Game = routines.CreateGame(ctx, time.Second, globalTheme, make(chan struct{}))
 
 	if _, err := program.Run(); err != nil {
 		battleships.Routines.Lobby.Quit()

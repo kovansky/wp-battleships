@@ -1,11 +1,13 @@
 package board
 
 import (
+	"fmt"
 	"github.com/76creates/stickers"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	battleships "github.com/kovansky/wp-battleships"
 	"github.com/mbndr/figlet4go"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -112,6 +114,7 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.displayError = ""
 			c.targetInput.SetValue("")
 
+			c.Statistics().IncrementShots()
 			shotState, err := battleships.ServerClient.Fire(c.Game, field)
 			if err != nil {
 				c.displayError = "Error firing: " + err.Error()
@@ -123,8 +126,11 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				fieldState = battleships.FieldStateMiss
 			case battleships.ShotHit:
 				fieldState = battleships.FieldStateHit
+				c.Statistics().IncrementHits()
 			case battleships.ShotSunk:
 				fieldState = battleships.FieldStateSunk
+				c.Statistics().IncrementHits()
+				c.Statistics().IncrementSunk()
 			}
 
 			board := c.OpponentBoard()
@@ -170,6 +176,12 @@ func (c Full) View() string {
 	enemyState := c.themes.global.TextPrimary()
 
 	gameInfo := c.playersInfo
+
+	percentage := float64(c.Statistics().Hits()) / float64(c.Statistics().Shots())
+	if math.IsNaN(percentage) {
+		percentage = 0
+	}
+	gameInfo += fmt.Sprintf("\n\n%d hits out of %d shots (including %d sunk) - %.3f%%", c.Statistics().Hits(), c.Statistics().Shots(), c.Statistics().Sunk(), 0.0)
 
 	if c.GameStatus().ShouldFire {
 		friendlyState = c.themes.global.TextSecondary()
