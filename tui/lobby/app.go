@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/tui/common"
 	"github.com/mbndr/figlet4go"
 	"github.com/rs/zerolog"
 )
@@ -22,7 +23,7 @@ type Lobby struct {
 
 func Create(ctx context.Context, theme battleships.Theme, initialPlayers []battleships.Player) Lobby {
 	asciiRender := figlet4go.NewAsciiRender()
-	header := CreateHeader("Battleships", theme, asciiRender)
+	header := common.CreateHeader("Battleships", theme, asciiRender)
 	table := CreatePlayers(ctx, theme, initialPlayers)
 
 	log := ctx.Value(battleships.ContextKeyLog).(zerolog.Logger)
@@ -70,7 +71,7 @@ func (c Lobby) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		table := c.subcomponents["table"].(Players)
 
 		table.Width = msg.Width
-		table.Height = msg.Height - c.subcomponents["header"].(Header).Height
+		table.Height = msg.Height - c.subcomponents["header"].(common.Header).Height
 
 		c.subcomponents["table"] = table
 	}

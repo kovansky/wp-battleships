@@ -8,6 +8,7 @@ import (
 	"github.com/kovansky/wp-battleships/tui"
 	"github.com/kovansky/wp-battleships/tui/board"
 	"github.com/kovansky/wp-battleships/tui/lobby"
+	"github.com/kovansky/wp-battleships/tui/login"
 	"github.com/mbndr/figlet4go"
 	"github.com/rs/zerolog"
 	"time"
@@ -20,27 +21,28 @@ type Application struct {
 	stage tui.Stage
 	theme battleships.Theme
 
+	login login.Login
 	lobby lobby.Lobby
 	game  board.Full
 
 	width, height int
 
 	asciiRender *figlet4go.AsciiRender
-
-	quit chan struct{}
 }
 
-func Create(ctx context.Context, theme battleships.Theme, lobbyApp lobby.Lobby) Application {
+func Create(ctx context.Context, theme battleships.Theme) Application {
 	asciiRender := figlet4go.NewAsciiRender()
 
 	log := ctx.Value(battleships.ContextKeyLog).(zerolog.Logger)
+
+	loginApp := login.Create(ctx, theme)
 
 	return Application{
 		ctx:         ctx,
 		log:         log,
 		theme:       theme,
-		stage:       tui.StageLobby,
-		lobby:       lobbyApp,
+		stage:       tui.StageLogin,
+		login:       loginApp,
 		asciiRender: asciiRender,
 	}
 }
@@ -48,7 +50,7 @@ func Create(ctx context.Context, theme battleships.Theme, lobbyApp lobby.Lobby) 
 func (c Application) Init() tea.Cmd {
 	var cmds []tea.Cmd
 
-	cmds = append(cmds, c.lobby.Init())
+	cmds = append(cmds, c.login.Init())
 
 	return tea.Batch(cmds...)
 }
@@ -71,8 +73,27 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tui.ApplicationStageChangeMsg:
 		switch msg.Stage {
+		case tui.StageLobby:
+			c.lobby = msg.Model.(lobby.Lobby)
+			c.stage = msg.Stage
+
+			cmds = append(cmds, c.lobby.Init())
+
+			tmp, cmd = c.lobby.Update(tea.WindowSizeMsg{
+				Width:  c.width,
+				Height: c.height,
+			})
+			c.lobby = tmp.(lobby.Lobby)
+			cmds = append(cmds, cmd)
+
+			battleships.Routines.Lobby = routines.CreateLobby(c.ctx, 5*time.Second, make(chan struct{}))
+			go battleships.Routines.Lobby.Run()
+
+			if msg.From == tui.StageGame {
+				battleships.Routines.Game.Quit()
+			}
 		case tui.StageGame:
-			c.game = msg.Board.(board.Full)
+			c.game = msg.Model.(board.Full)
 			c.stage = msg.Stage
 
 			cmds = append(cmds, c.game.Init())
@@ -84,14 +105,19 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.game = tmp.(board.Full)
 			cmds = append(cmds, cmd)
 
-			c.quit = make(chan struct{})
-			battleships.Routines.Game = routines.CreateGame(c.ctx, 1*time.Second, c.theme, c.quit)
+			battleships.Routines.Game = routines.CreateGame(c.ctx, 1*time.Second, c.theme, make(chan struct{}))
 			go battleships.Routines.Game.Run()
 			battleships.Routines.Lobby.Quit()
 		}
 	case tea.WindowSizeMsg:
 		c.width = msg.Width
 		c.height = msg.Height
+	}
+
+	if c.stage == tui.StageLogin {
+		tmp, cmd = c.login.Update(msg)
+		c.login = tmp.(login.Login)
+		cmds = append(cmds, cmd)
 	}
 
 	if c.stage == tui.StageLobby {
@@ -111,6 +137,8 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (c Application) View() string {
 	switch c.stage {
+	case tui.StageLogin:
+		return c.login.View()
 	case tui.StageLobby:
 		return c.lobby.View()
 	case tui.StageGame:

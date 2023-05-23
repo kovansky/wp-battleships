@@ -71,6 +71,10 @@ func (g Game) Quit() {
 	select {
 	case <-g.quit:
 	default:
+		if battleships.GameInstance != nil && battleships.GameInstance.Key() != "" {
+			_ = battleships.ServerClient.Abandon(battleships.GameInstance)
+		}
+
 		close(g.quit)
 	}
 }

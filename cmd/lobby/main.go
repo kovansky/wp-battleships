@@ -8,7 +8,6 @@ import (
 	"github.com/kovansky/wp-battleships/routines"
 	"github.com/kovansky/wp-battleships/ships"
 	"github.com/kovansky/wp-battleships/tui"
-	"github.com/kovansky/wp-battleships/tui/lobby"
 	"github.com/kovansky/wp-battleships/tui/wrapper"
 	"github.com/rs/zerolog"
 	"os"
@@ -40,12 +39,6 @@ func main() {
 	battleships.ServerClient = ships.NewClient(ctx, "https://go-pjatk-server.fly.dev/api", &log)
 
 	// Initialize ships
-	var err error
-	players, err := battleships.ServerClient.ListPlayers()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Couldn't list players")
-	}
-
 	colRowStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#00ff7f")).
 		Bold(true)
@@ -78,8 +71,7 @@ func main() {
 		Global: globalTheme,
 	}
 
-	lobbyComponent := lobby.Create(ctx, globalTheme, players)
-	applicationWrapper := wrapper.Create(ctx, globalTheme, lobbyComponent)
+	applicationWrapper := wrapper.Create(ctx, globalTheme)
 
 	program := tea.NewProgram(applicationWrapper, tea.WithAltScreen())
 
@@ -87,8 +79,6 @@ func main() {
 		program.Send(msg)
 	}
 
-	battleships.Routines.Lobby = routines.CreateLobby(ctx, 5*time.Second, make(chan struct{}))
-	go battleships.Routines.Lobby.Run()
 	battleships.Routines.Game = routines.CreateGame(ctx, time.Second, globalTheme, make(chan struct{}))
 
 	if _, err := program.Run(); err != nil {

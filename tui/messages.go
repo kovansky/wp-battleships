@@ -5,6 +5,7 @@ import (
 )
 
 type ApplicationStageChangeMsg struct {
+	From  Stage
 	Stage Stage
-	Board tea.Model
+	Model tea.Model
 }

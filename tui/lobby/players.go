@@ -96,8 +96,9 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			gameBoard := board.InitFull(battleships.GameInstance, battleships.Themes.Player, battleships.Themes.Enemy, battleships.Themes.Global, fmt.Sprintf(lipgloss.NewStyle().Italic(true).Render("Waiting for game...")))
 			return c, func() tea.Msg {
 				return tui.ApplicationStageChangeMsg{
+					From:  tui.StageLobby,
 					Stage: tui.StageGame,
-					Board: gameBoard,
+					Model: gameBoard,
 				}
 			}
 		case "backspace":

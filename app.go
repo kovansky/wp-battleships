@@ -17,4 +17,9 @@ var (
 	Routines GameRoutines
 
 	ProgramMessage func(msg tea.Msg)
+
+	PlayerData struct {
+		Nick        string
+		Description string
+	}
 )

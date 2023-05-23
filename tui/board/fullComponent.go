@@ -142,6 +142,8 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			c.SetOpponentBoard(board)
 			c.opponent.SetBoard(c.OpponentBoard())
+
+			c.targetInput.Blur()
 		}
 	case tea.WindowSizeMsg:
 		c.flexbox.SetWidth(msg.Width)

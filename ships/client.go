@@ -47,7 +47,7 @@ func (c *Client) InitGame(data battleships.GamePost) (battleships.Game, error) {
 }
 
 func (c *Client) Abandon(game battleships.Game) error {
-	method, endpoint := http.MethodGet, "/game/abandon"
+	method, endpoint := http.MethodDelete, "/game/abandon"
 	var body []byte
 
 	_, _, err := c.request(method, endpoint, game.Key(), body)
@@ -163,7 +163,7 @@ func (c *Client) Refresh(game battleships.Game) error {
 
 func (c *Client) PlayerStats(nick string) (battleships.PlayerStats, error) {
 	method := http.MethodGet
-	endpoint, err := url.JoinPath("/game/stats", nick)
+	endpoint, err := url.JoinPath("/stats", nick)
 	if err != nil {
 		return battleships.PlayerStats{}, err
 	}
@@ -188,7 +188,7 @@ func (c *Client) PlayerStats(nick string) (battleships.PlayerStats, error) {
 func (c *Client) ListPlayers() ([]battleships.Player, error) {
 	var players []battleships.Player
 
-	method, endpoint := http.MethodGet, "/game/list"
+	method, endpoint := http.MethodGet, "/lobby"
 	var body []byte
 
 	res, _, err := c.request(method, endpoint, "", body)
