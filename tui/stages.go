@@ -3,8 +3,8 @@ package tui
 type Stage string
 
 const (
-	StageLogin    Stage = "login"
-	StageModeMenu       = "mode"
-	StageLobby          = "lobby"
-	StageGame           = "game"
+	StageLogin Stage = "login"
+	StageWait        = "wait"
+	StageLobby       = "lobby"
+	StageGame        = "game"
 )

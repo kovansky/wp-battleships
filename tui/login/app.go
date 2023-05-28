@@ -9,6 +9,7 @@ import (
 	"github.com/kovansky/wp-battleships/tui"
 	"github.com/kovansky/wp-battleships/tui/common"
 	"github.com/kovansky/wp-battleships/tui/lobby"
+	"github.com/kovansky/wp-battleships/tui/wait"
 	"github.com/mbndr/figlet4go"
 	"github.com/rs/zerolog"
 )
@@ -32,18 +33,27 @@ func Create(ctx context.Context, theme battleships.Theme) Login {
 
 	asciiRender := figlet4go.NewAsciiRender()
 
-	inputComponents := make([]textinput.Model, 2)
+	inputComponents := make([]textinput.Model, 3)
 	inputs := []struct {
-		name      string
-		charLimit int
+		name        string
+		placeholder string
+		charLimit   int
 	}{
-		{"nick", 30},
-		{"description", 150},
+		{"nick", "", 30},
+		{"description", "", 150},
+		{"mode", "w", 1},
 	}
 	for i, data := range inputs {
 		input := textinput.New()
 		input.CharLimit = data.charLimit
 		input.Width = 50
+		if data.charLimit < input.Width {
+			input.Width = data.charLimit
+		}
+
+		if data.placeholder != "" {
+			input.Placeholder = data.placeholder
+		}
 
 		if i == 0 {
 			input.Focus()
@@ -141,7 +151,7 @@ func (c Login) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (c Login) View() string {
-	block := lipgloss.JoinVertical(lipgloss.Center,
+	block := lipgloss.JoinVertical(lipgloss.Left,
 		c.theme.TextPrimary().
 			Copy().
 			Italic(true).
@@ -153,6 +163,12 @@ func (c Login) View() string {
 		// Description
 		c.theme.TextSecondary().Render("Description:"),
 		c.inputs[1].View(),
+		// Mode
+		c.theme.TextSecondary().Render("Would you like to wait for opponents' challenge (w), or choose the opponent yourself? (l)"),
+		c.inputs[2].View(),
+	)
+	block = lipgloss.JoinVertical(lipgloss.Center,
+		block,
 		// Submit button
 		"",
 		c.subcomponents["submit"].View(),
@@ -172,19 +188,38 @@ func (c Login) View() string {
 func (c Login) submit() tea.Cmd {
 	battleships.PlayerData.Nick = c.inputs[0].Value()
 	battleships.PlayerData.Description = c.inputs[1].Value()
+	mode := c.inputs[2].Value()
 
-	players, err := battleships.ServerClient.ListPlayers()
-	if err != nil {
-		c.log.Fatal().Err(err).Msg("failed to list players")
+	var targetStage tui.Stage
+	targetStage = tui.StageWait
+	if mode == "l" {
+		targetStage = tui.StageLobby
 	}
 
-	lobbyApp := lobby.Create(c.ctx, battleships.Themes.Global, players)
+	if targetStage == tui.StageLobby {
+		players, err := battleships.ServerClient.ListPlayers()
+		if err != nil {
+			c.log.Fatal().Err(err).Msg("failed to list players")
+		}
 
-	return func() tea.Msg {
-		return tui.ApplicationStageChangeMsg{
-			From:  tui.StageLogin,
-			Stage: tui.StageLobby,
-			Model: lobbyApp,
+		app := lobby.Create(c.ctx, battleships.Themes.Global, players)
+
+		return func() tea.Msg {
+			return tui.ApplicationStageChangeMsg{
+				From:  tui.StageLogin,
+				Stage: targetStage,
+				Model: app,
+			}
+		}
+	} else {
+		app := wait.Create(c.ctx, c.theme)
+
+		return func() tea.Msg {
+			return tui.ApplicationStageChangeMsg{
+				From:  tui.StageLogin,
+				Stage: targetStage,
+				Model: app,
+			}
 		}
 	}
 }

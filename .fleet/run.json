@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "go",
+            "name": "Lobby",
+            "goExecPath": "$USER_HOME$\\sdk\\go1.19\\go1.19.5\\bin\\go.exe",
+            "buildParams": [],
+            "workingDir": "cmd/lobby/",
+            "environment": {
+                "GOROOT": "$USER_HOME$\\sdk\\go1.19\\go1.19.5"
+            },
+        }
+    ]
+}

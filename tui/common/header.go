@@ -20,9 +20,15 @@ type Header struct {
 }
 
 func CreateHeader(text string, theme battleships.Theme, asciiRender *figlet4go.AsciiRender) Header {
+	blockStyle := theme.TextPrimary().
+		Copy().
+		Align(lipgloss.Center).
+		PaddingBottom(2)
+
 	return Header{
 		Text:        text,
 		theme:       theme,
+		blockStyle: blockStyle,
 		asciiRender: asciiRender,
 	}
 }
@@ -35,7 +41,8 @@ func (c Header) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		c.width = msg.Width
-		c.blockStyle = c.theme.TextPrimary().Copy().
+		c.blockStyle = c.theme.TextPrimary().
+			Copy().
 			Width(c.width).
 			Align(lipgloss.Center).
 			PaddingBottom(2)

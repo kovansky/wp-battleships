@@ -1,0 +1,6 @@
+{
+    "toolchains": [{
+        "name": "Go",
+        "path": "~/sdk/go1.19/go1.19.5/",
+    }]
+}

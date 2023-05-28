@@ -9,6 +9,7 @@ import (
 	"github.com/kovansky/wp-battleships/tui/board"
 	"github.com/kovansky/wp-battleships/tui/lobby"
 	"github.com/kovansky/wp-battleships/tui/login"
+	"github.com/kovansky/wp-battleships/tui/wait"
 	"github.com/mbndr/figlet4go"
 	"github.com/rs/zerolog"
 	"time"
@@ -23,6 +24,7 @@ type Application struct {
 
 	login login.Login
 	lobby lobby.Lobby
+	wait  wait.Wait
 	game  board.Full
 
 	width, height int
@@ -66,8 +68,12 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			battleships.Routines.Game.Quit()
-			battleships.Routines.Lobby.Quit()
+			if battleships.Routines.Game != nil {
+				battleships.Routines.Game.Quit()
+			}
+			if battleships.Routines.Lobby != nil {
+				battleships.Routines.Lobby.Quit()
+			}
 
 			return c, tea.Quit
 		}
@@ -92,6 +98,18 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.From == tui.StageGame {
 				battleships.Routines.Game.Quit()
 			}
+		case tui.StageWait:
+			c.wait = msg.Model.(wait.Wait)
+			c.stage = msg.Stage
+
+			cmds = append(cmds, c.wait.Init())
+
+			tmp, cmd = c.wait.Update(tea.WindowSizeMsg{
+				Width:  c.width,
+				Height: c.height,
+			})
+			c.wait = tmp.(wait.Wait)
+			cmds = append(cmds, cmd)
 		case tui.StageGame:
 			c.game = msg.Model.(board.Full)
 			c.stage = msg.Stage
@@ -120,6 +138,12 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
+	if c.stage == tui.StageWait {
+		tmp, cmd = c.wait.Update(msg)
+		c.wait = tmp.(wait.Wait)
+		cmds = append(cmds, cmd)
+	}
+
 	if c.stage == tui.StageLobby {
 		tmp, cmd = c.lobby.Update(msg)
 		c.lobby = tmp.(lobby.Lobby)
@@ -139,6 +163,8 @@ func (c Application) View() string {
 	switch c.stage {
 	case tui.StageLogin:
 		return c.login.View()
+	case tui.StageWait:
+		return c.wait.View()
 	case tui.StageLobby:
 		return c.lobby.View()
 	case tui.StageGame:
