@@ -71,6 +71,8 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if c.selected == "WP_Bot" {
 				game, err = battleships.ServerClient.InitGame(battleships.GamePost{
 					Wpbot: true,
+					Nick:  battleships.PlayerData.Nick,
+					Desc:  battleships.PlayerData.Description,
 				})
 				if err != nil {
 					c.log.Fatal().Err(err).Msg("Couldn't initialize game")
@@ -78,6 +80,8 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				game, err = battleships.ServerClient.InitGame(battleships.GamePost{
 					TargetNick: c.selected,
+					Nick:       battleships.PlayerData.Nick,
+					Desc:       battleships.PlayerData.Description,
 				})
 				if err != nil {
 					c.log.Fatal().Err(err).Msg("Couldn't initialize game")

@@ -16,5 +16,5 @@
 - [x] #16 - leave game
     - need to add help note
 - [ ] #17 - ranking
-- [-] #18 - game state
+- [x] #18 - game state
 - [ ] #19 - count enemy ships

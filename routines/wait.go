@@ -75,7 +75,14 @@ func (w Wait) Run() {
 		case <-refreshTicker.C:
 			err := battleships.ServerClient.Refresh(battleships.GameInstance)
 			if err != nil {
-				w.log.Fatal().Err(err).Msg("Couldn't refresh game")
+				statusErr := battleships.ServerClient.GameStatus(battleships.GameInstance)
+				if statusErr != nil {
+					w.log.Fatal().Err(statusErr).Msg("Could not update game status")
+				}
+
+				if battleships.GameInstance.GameStatus().Status != battleships.StatusGameInProgress {
+					w.log.Fatal().Err(err).Msg("Couldn't refresh game")
+				}
 			}
 		case <-w.quit:
 			statusTicker.Stop()
