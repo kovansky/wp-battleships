@@ -143,6 +143,10 @@ func (f Field) IsCorner(location string) bool {
 	}
 }
 
+func (f Field) State(state State) StatedField {
+	return StatedField{Field: f, State: state}
+}
+
 func NumericToIdentifier(numeric uint8) (string, error) {
 	if numeric > 99 {
 		return "", errors.New("field out of range")
@@ -153,4 +157,35 @@ func NumericToIdentifier(numeric uint8) (string, error) {
 	identifier.WriteString(strconv.Itoa(int(numeric%10) + 1))
 	
 	return identifier.String(), nil
+}
+
+func IsFieldIdentifier(s string) bool {
+	if !(s[0] >= 'A' && s[0] <= 'J') {
+		return false
+	}
+
+	num, err := strconv.Atoi(s[1:])
+	if err != nil {
+		return false
+	}
+
+	if !(num > 0 && num <= 10) {
+		return false
+	}
+
+	return true
+}
+
+type StatedField struct {
+	Field
+	State State
+}
+
+func NewStatedField(s string, state State) (StatedField, error) {
+	f, err := NewField(s)
+	if err != nil {
+		return StatedField{}, err
+	}
+
+	return f.State(state), nil
 }
