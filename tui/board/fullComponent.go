@@ -6,10 +6,12 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/tui"
 	"github.com/mbndr/figlet4go"
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type themes struct {
@@ -154,6 +156,15 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if c.GameStatus().ShouldFire {
 				cmds = append(cmds, c.targetInput.Focus())
 			}
+		case battleships.StatusEnded:
+			go func() {
+				time.Sleep(5 * time.Second)
+
+				battleships.ProgramMessage(tui.ApplicationStageChangeMsg{
+					From:  tui.StageGame,
+					Stage: tui.StageLogin,
+				})
+			}()
 		}
 	case battleships.PlayersUpdateMsg:
 		c.playersInfo = msg.PlayersInfo

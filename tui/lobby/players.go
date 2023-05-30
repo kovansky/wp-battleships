@@ -25,6 +25,8 @@ type Players struct {
 	selected       string
 	initialPlayers []battleships.Player
 
+	filterString string
+
 	table *stickers.Table
 }
 
@@ -51,7 +53,7 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "c", "ctrl+c":
+		case "ctrl+c":
 			return c, tea.Quit
 		case "down":
 			c.table.CursorDown()
@@ -103,11 +105,13 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "backspace":
 			c.filterWithStr(msg.String())
+			_, c.filterString = c.table.GetFilter()
 		default:
 			if len(msg.String()) == 1 {
 				r := msg.Runes[0]
 				if unicode.IsLetter(r) || unicode.IsDigit(r) {
 					c.filterWithStr(msg.String())
+					_, c.filterString = c.table.GetFilter()
 				}
 			}
 		}
@@ -124,6 +128,7 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.table.
 			SetWidth(c.Width).
 			SetHeight(c.Height)
+		c.filterWithStr(c.filterString)
 
 		// Move cursor to it's focused position
 		for i := 0; i < c.focused; i++ {

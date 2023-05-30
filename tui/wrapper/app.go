@@ -79,6 +79,12 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tui.ApplicationStageChangeMsg:
 		switch msg.Stage {
+		case tui.StageLogin:
+			c.stage = msg.Stage
+
+			if msg.From == tui.StageGame {
+				battleships.Routines.Game.Quit()
+			}
 		case tui.StageLobby:
 			c.lobby = msg.Model.(lobby.Lobby)
 			c.stage = msg.Stage
