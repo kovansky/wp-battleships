@@ -1,0 +1,20 @@
+- [x] #1 - join game
+- [x] #2 - boards
+- [x] #3 - descriptions
+- [ ] #4 - graphic UI lib
+- [x] #5 - shoot with coords
+- [x] #6 - see my board changes
+- [x] #7 - see opponent board changes
+- [x] #8 - game score
+- [x] #9 - play with any player (lobby)
+- [x] #10 - accuracy
+- [x] #11 - autostart next game
+- [x] #12 - pseudonym, wait room
+- [x] #13 - lobby
+- [x] #14 - timer
+- [ ] #15 - manual ships placement
+- [x] #16 - leave game
+    - need to add help note
+- [ ] #17 - ranking
+- [-] #18 - game state
+- [ ] #19 - count enemy ships
