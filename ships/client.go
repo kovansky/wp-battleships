@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -208,9 +209,13 @@ func (c *Client) ListPlayers() ([]battleships.Player, error) {
 
 	parsed = append(parsed, responseType{Nick: "WP_Bot"})
 
-	for _, player := range parsed {
-		player, err := c.PlayerStats(player.Nick)
+	for _, pPlayer := range parsed {
+		player, err := c.PlayerStats(pPlayer.Nick)
 		if err != nil {
+			if strings.Contains(err.Error(), "404") {
+				players = append(players, NewPlayer(pPlayer.Nick, ""))
+			}
+
 			continue
 		}
 
@@ -256,40 +261,66 @@ func (c *Client) request(method, endpoint string, key string, body []byte) ([]by
 		return nil, nil, err
 	}
 
-	req, err := http.NewRequestWithContext(timeoutCtx, method, reqUrl, bytes.NewBuffer(body))
-	if key != "" {
-		req.Header.Set(ApiTokenHeader, key)
-	}
-	if err != nil {
-		return nil, nil, err
-	}
+	var (
+		repeats  = 0
+		finished = false
+	)
 
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer res.Body.Close()
+	var (
+		res     *http.Response
+		resBody []byte
+	)
+	for repeats < 3 && !finished {
+		repeats++
 
-	if res.StatusCode != 200 && res.StatusCode != 201 {
-		errMsg := fmt.Sprintf("Server returned code %d", res.StatusCode)
-
-		var parsed map[string]interface{}
-		if err = json.NewDecoder(res.Body).Decode(&parsed); err != nil {
-			if !errors.Is(err, io.EOF) {
-				return nil, nil, err
+		err := func() error {
+			req, err := http.NewRequestWithContext(timeoutCtx, method, reqUrl, bytes.NewBuffer(body))
+			if key != "" {
+				req.Header.Set(ApiTokenHeader, key)
 			}
+			if err != nil {
+				return err
+			}
+
+			res, err = http.DefaultClient.Do(req)
+			if err != nil {
+				return err
+			}
+			defer res.Body.Close()
+
+			if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+				if res.StatusCode == http.StatusServiceUnavailable {
+					return nil
+				}
+
+				errMsg := fmt.Sprintf("Server returned code %d", res.StatusCode)
+
+				var parsed map[string]interface{}
+				if err = json.NewDecoder(res.Body).Decode(&parsed); err != nil {
+					if !errors.Is(err, io.EOF) {
+						return err
+					}
+				}
+
+				if message, ok := parsed["message"]; ok {
+					errMsg = fmt.Sprintf("Server returned code %d. Message: %v", res.StatusCode, message)
+				}
+
+				return errors.New(errMsg)
+			}
+			finished = true
+
+			resBody, err = io.ReadAll(res.Body)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}()
+
+		if err != nil {
+			return nil, nil, err
 		}
-
-		if message, ok := parsed["message"]; ok {
-			errMsg = fmt.Sprintf("Server returned code %d. Message: %v", res.StatusCode, message)
-		}
-
-		return nil, nil, errors.New(errMsg)
-	}
-
-	resBody, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, nil, err
 	}
 
 	return resBody, res.Header, nil

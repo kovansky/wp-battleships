@@ -50,14 +50,14 @@ func (c Wait) Init() tea.Cmd {
 
 func (c Wait) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
-		cmd tea.Cmd
+		cmd  tea.Cmd
 		cmds []tea.Cmd
 	)
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return c, tea.Quit
 		}
 	case spinner.TickMsg:
@@ -65,7 +65,7 @@ func (c Wait) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.subcomponents["spinner"], cmd = c.subcomponents["spinner"].(Spinner).Update(msg)
 		return c, cmd
 	}
-	
+
 	for name, cmp := range c.subcomponents {
 		c.subcomponents[name], cmd = cmp.Update(msg)
 		cmds = append(cmds, cmd)

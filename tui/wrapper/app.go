@@ -67,7 +67,7 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			if battleships.Routines.Game != nil {
 				battleships.Routines.Game.Quit()
 			}
@@ -98,6 +98,9 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.From == tui.StageGame {
 				battleships.Routines.Game.Quit()
 			}
+			if msg.From == tui.StageWait {
+				battleships.Routines.Wait.Quit()
+			}
 		case tui.StageWait:
 			c.wait = msg.Model.(wait.Wait)
 			c.stage = msg.Stage
@@ -110,6 +113,9 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			})
 			c.wait = tmp.(wait.Wait)
 			cmds = append(cmds, cmd)
+
+			battleships.Routines.Wait = routines.CreateWait(c.ctx, 1*time.Second, 7*time.Second, make(chan struct{}))
+			go battleships.Routines.Wait.Run()
 		case tui.StageGame:
 			c.game = msg.Model.(board.Full)
 			c.stage = msg.Stage
@@ -125,7 +131,13 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			battleships.Routines.Game = routines.CreateGame(c.ctx, 1*time.Second, c.theme, make(chan struct{}))
 			go battleships.Routines.Game.Run()
-			battleships.Routines.Lobby.Quit()
+
+			if msg.From == tui.StageLobby {
+				battleships.Routines.Lobby.Quit()
+			}
+			if msg.From == tui.StageWait {
+				battleships.Routines.Wait.Quit()
+			}
 		}
 	case tea.WindowSizeMsg:
 		c.width = msg.Width

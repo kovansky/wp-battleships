@@ -23,7 +23,7 @@ func (c *Single) Update(msg tea.Msg) (Single, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return *c, tea.Quit
 		}
 	}
