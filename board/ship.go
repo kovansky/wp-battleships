@@ -131,3 +131,13 @@ func (s Ship) Protected() (map[string]StatedField, error) {
 
 	return protected, nil
 }
+
+func (s Ship) IsAdjacent(field string) bool {
+	for _, f := range s.ship {
+		if f.IsAdjacent(field) {
+			return true
+		}
+	}
+
+	return false
+}

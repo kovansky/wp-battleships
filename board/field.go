@@ -29,7 +29,6 @@ func NewField(s string) (Field, error) {
 	return field, nil
 }
 
-
 func (f Field) Numeric() uint8 {
 	return f.numeric
 }
@@ -155,7 +154,7 @@ func NumericToIdentifier(numeric uint8) (string, error) {
 	var identifier strings.Builder
 	identifier.WriteRune(rune((numeric/10)%10 + 'A'))
 	identifier.WriteString(strconv.Itoa(int(numeric%10) + 1))
-	
+
 	return identifier.String(), nil
 }
 
