@@ -1,6 +1,9 @@
 package battleships
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+	"github.com/kovansky/wp-battleships/parts"
+)
 
 type GameThemes struct {
 	Player Theme
@@ -39,6 +42,7 @@ type Theme interface {
 
 	RenderBorder() string
 	RenderField(state FieldState) string
+	NewRenderField(state parts.State) string
 
 	RenderShip() string
 	RenderHit() string

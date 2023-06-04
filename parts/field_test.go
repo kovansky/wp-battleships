@@ -1,7 +1,7 @@
-package board_test
+package parts_test
 
 import (
-	"github.com/kovansky/wp-battleships/board"
+	"github.com/kovansky/wp-battleships/parts"
 	"testing"
 )
 
@@ -25,7 +25,7 @@ func TestField_Numeric(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			f, err := board.NewField(tt.input)
+			f, err := parts.NewField(tt.input)
 			if err != nil && !tt.wantErr {
 				t.Fatalf("Received unexpected error: %v", err)
 			} else if err != nil && tt.wantErr {
@@ -56,13 +56,13 @@ func TestField_IsCorner(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			f, err := board.NewField(tt.field)
+			f, err := parts.NewField(tt.field)
 			if err != nil {
 				t.Fatalf("Received unexpected error: %v", err)
 			}
 
 			got := f.IsCorner(tt.target)
-			
+
 			if got != tt.expected {
 				t.Fatalf("Incorrect numeric value; expected: %t, got: %t", tt.expected, got)
 			}

@@ -2,16 +2,14 @@ package main
 
 import (
 	"context"
-	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
 	"github.com/kovansky/wp-battleships/ships"
 	"github.com/kovansky/wp-battleships/tui"
-	"github.com/kovansky/wp-battleships/tui/board"
+	"github.com/kovansky/wp-battleships/tui/setup"
 	"github.com/rs/zerolog"
 	"os"
-	"time"
 )
 
 var (
@@ -23,10 +21,6 @@ func main() {
 	// Propagate build info
 	battleships.Version = Version
 
-	// Setup signal handlers
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	// Create logger
 	log = zerolog.
 		New(os.Stdout).
@@ -34,30 +28,15 @@ func main() {
 		Logger().
 		Output(zerolog.ConsoleWriter{Out: os.Stdout})
 
+	// Setup signal handlers
+	ctx, cancel := context.WithCancel(context.Background())
+	ctx = context.WithValue(ctx, battleships.ContextKeyLog, log)
+	defer cancel()
+
 	// Create client
 	battleships.ServerClient = ships.NewClient(ctx, "https://go-pjatk-server.fly.dev/api", &log)
 
 	// Initialize ships
-	game, err := battleships.ServerClient.InitGame(battleships.GamePost{
-		Desc:  "It's a mee, Mario",
-		Nick:  "Mario_the_Plumber",
-		Wpbot: true,
-	})
-	if err != nil {
-		log.Fatal().Err(err).Msg("Couldn't init the game")
-	}
-
-	log.Info().Str("Api-Key", game.Key()).Msg("Game started")
-
-	err = battleships.ServerClient.UpdateBoard(game)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Couldn't update the game board")
-	}
-	err = battleships.ServerClient.GameStatus(game)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Couldn't update the game status")
-	}
-
 	colRowStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#00ff7f")).
 		Bold(true)
@@ -84,52 +63,21 @@ func main() {
 		SetTextPrimary(lipgloss.NewStyle().Foreground(lipgloss.Color("#ffd700"))).
 		SetTextSecondary(lipgloss.NewStyle().Foreground(lipgloss.Color("#1e90ff")))
 
-	playersInfo := fmt.Sprintf(lipgloss.NewStyle().Italic(true).Render("Waiting for game..."))
+	battleships.Themes = battleships.GameThemes{
+		Player: theme,
+		Enemy:  theme,
+		Global: globalTheme,
+	}
 
-	boardComponent := board.InitFull(game, theme, theme, globalTheme, playersInfo)
+	setupApp := setup.Create(ctx, globalTheme)
 
-	program := tea.NewProgram(boardComponent, tea.WithAltScreen())
+	program := tea.NewProgram(setupApp, tea.WithAltScreen())
 
-	ticker := time.NewTicker(1 * time.Second)
-	quit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				err = battleships.ServerClient.GameStatus(game)
-				if err != nil {
-					log.Fatal().Err(err).Msg("Couldn't update the game status")
-				}
-
-				if game.GameStatus().Status == battleships.StatusGameInProgress && game.GameStatus().ShouldFire && (game.Opponent() == nil || game.Opponent().Name() == "") {
-					err = battleships.ServerClient.GameDesc(game)
-					if err != nil {
-						log.Fatal().Err(err).Msg("Couldn't update the game description")
-					}
-
-					playersInfo = fmt.Sprintf("%s %s %s\n"+
-						"%s %s %s",
-						globalTheme.TextPrimary().Copy().Bold(true).Render("YOU"),
-						game.Player().Name(),
-						lipgloss.NewStyle().Italic(true).Render("("+game.Player().Description()+")"),
-						globalTheme.TextPrimary().Copy().Bold(true).Render("ENEMY"),
-						game.Opponent().Name(),
-						lipgloss.NewStyle().Italic(true).Render("("+game.Opponent().Description()+")"),
-					)
-
-					program.Send(battleships.PlayersUpdateMsg{PlayersInfo: playersInfo})
-				}
-
-				program.Send(battleships.GameUpdateMsg{})
-			case <-quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+	battleships.ProgramMessage = func(msg tea.Msg) {
+		program.Send(msg)
+	}
 
 	if _, err := program.Run(); err != nil {
-		close(quit)
 		log.Error().Err(err).Msg("Could not draw board")
 	}
 }

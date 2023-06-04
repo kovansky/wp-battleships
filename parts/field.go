@@ -1,29 +1,28 @@
-package board
+package parts
 
 import (
-	"errors"
 	"strconv"
 	"strings"
 )
 
 type Field struct {
-	Identifier string
+	identifier string
 	numeric    uint8
 	adjacent   map[string]string
 }
 
 func NewField(s string) (Field, error) {
 	var err error
-	field := Field{Identifier: s}
+	field := Field{identifier: s}
 
 	field.numeric, err = field.calculateNumeric()
 	if err != nil {
-		return Field{}, errors.New("malformed field input")
+		return Field{}, NewErrFieldMalformed(s)
 	}
 
 	field.adjacent, err = field.calculateAdjacent()
 	if err != nil {
-		return Field{}, errors.New("adjacent calculation: malformed field input")
+		return Field{}, NewErrAdjacentFieldMalformed(field.String())
 	}
 
 	return field, nil
@@ -45,7 +44,7 @@ func (f Field) calculateNumeric() (uint8, error) {
 }
 
 func (f Field) String() string {
-	return f.Identifier
+	return f.identifier
 }
 
 func (f Field) Adjacent() map[string]string {
@@ -54,60 +53,65 @@ func (f Field) Adjacent() map[string]string {
 
 func (f Field) calculateAdjacent() (map[string]string, error) {
 	var (
-		err                error
-		isN, isS, isW, isE bool
+		err                    error
+		hasN, hasS, hasW, hasE bool
 	)
+	const (
+		NS = 1
+		EW = 10
+	)
+
 	adjacent := make(map[string]string)
 
-	if f.numeric > 10 {
-		adjacent["N"], err = NumericToIdentifier(f.numeric - 10)
-		isN = true
+	if f.numeric >= 10 {
+		adjacent["W"], err = NumericToIdentifier(f.numeric - EW)
+		hasW = true
 		if err != nil {
 			return nil, err
 		}
 	}
 	if f.numeric < 90 {
-		adjacent["S"], err = NumericToIdentifier(f.numeric + 10)
-		isS = true
+		adjacent["E"], err = NumericToIdentifier(f.numeric + EW)
+		hasE = true
 		if err != nil {
 			return nil, err
 		}
 	}
 	if f.numeric%10 > 0 {
-		adjacent["W"], err = NumericToIdentifier(f.numeric - 1)
-		isW = true
+		adjacent["S"], err = NumericToIdentifier(f.numeric - NS)
+		hasS = true
 		if err != nil {
 			return nil, err
 		}
 	}
 	if f.numeric%10 < 9 {
-		adjacent["E"], err = NumericToIdentifier(f.numeric + 1)
-		isE = true
+		adjacent["N"], err = NumericToIdentifier(f.numeric + NS)
+		hasN = true
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if isN && isW {
-		adjacent["NW"], err = NumericToIdentifier(f.numeric - 11)
+	if hasN && hasW {
+		adjacent["NW"], err = NumericToIdentifier(f.numeric + NS - EW)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if isN && isE {
-		adjacent["NE"], err = NumericToIdentifier(f.numeric - 9)
+	if hasN && hasE {
+		adjacent["NE"], err = NumericToIdentifier(f.numeric + NS + EW)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if isS && isW {
-		adjacent["SW"], err = NumericToIdentifier(f.numeric + 9)
+	if hasS && hasW {
+		adjacent["SW"], err = NumericToIdentifier(f.numeric - NS - EW)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if isS && isE {
-		adjacent["SE"], err = NumericToIdentifier(f.numeric + 11)
+	if hasS && hasE {
+		adjacent["SE"], err = NumericToIdentifier(f.numeric - NS + EW)
 		if err != nil {
 			return nil, err
 		}
@@ -148,7 +152,7 @@ func (f Field) State(state State) StatedField {
 
 func NumericToIdentifier(numeric uint8) (string, error) {
 	if numeric > 99 {
-		return "", errors.New("field out of range")
+		return "", NewErrFieldOutOfRange()
 	}
 
 	var identifier strings.Builder

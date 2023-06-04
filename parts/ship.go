@@ -1,8 +1,4 @@
-package board
-
-import (
-	"errors"
-)
+package parts
 
 var AllowedSizes = map[int]interface{}{1: nil, 2: nil, 3: nil, 4: nil}
 
@@ -12,7 +8,10 @@ type Ship struct {
 }
 
 func NewShip() Ship {
-	return Ship{finished: false}
+	return Ship{
+		finished: false,
+		ship:     make(map[string]Field),
+	}
 }
 
 func (s Ship) Contains(field string) bool {
@@ -24,14 +23,14 @@ func (s Ship) Size() int {
 	return len(s.ship)
 }
 
-func (s Ship) Add(field string) error {
+func (s Ship) Add(field string) (Ship, error) {
 	if _, ok := AllowedSizes[s.Size()+1]; !ok {
-		return errors.New("ship will grow too big if you do this")
+		return s, NewErrShipSize(s.Size() + 1)
 	}
 
 	f, err := NewField(field)
 	if err != nil {
-		return err
+		return s, err
 	}
 
 	if s.Size() > 0 {
@@ -51,52 +50,22 @@ func (s Ship) Add(field string) error {
 		}
 
 		if !anyAdjacent {
-			return errors.New("field is not adjacent to any of the existing parts of the ship")
+			return s, NewErrFieldNonadjacent(field)
 		}
 	}
 
-	s.ship[f.Identifier] = f
+	s.ship[f.identifier] = f
 
-	return nil
+	return s, nil
 }
 
-func (s Ship) Remove(field string) error {
-	if !s.Contains(field) {
-		return nil
-	}
-	f := s.ship[field]
-
-	connections := 0
-
-	edges := []string{
-		f.adjacent["N"],
-		f.adjacent["S"],
-		f.adjacent["W"],
-		f.adjacent["E"],
-	}
-
-	for _, edge := range edges {
-		if s.Contains(edge) {
-			connections++
-			break
-		}
-	}
-
-	if connections > 0 {
-		return errors.New("removing this field would destroy the whole ship")
-	}
-
-	delete(s.ship, field)
-	return nil
-}
-
-func (s Ship) Finish() error {
+func (s Ship) Finish() (Ship, error) {
 	if _, ok := AllowedSizes[s.Size()]; !ok {
-		return errors.New("incorrect ship size")
+		return s, NewErrShipSize(s.Size())
 	}
 
 	s.finished = true
-	return nil
+	return s, nil
 }
 
 func (s Ship) Ship() map[string]Field {

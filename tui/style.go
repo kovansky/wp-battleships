@@ -3,6 +3,7 @@ package tui
 import (
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/parts"
 )
 
 type Brush struct {
@@ -147,6 +148,17 @@ func (t Theme) RenderField(state battleships.FieldState) string {
 		return t.RenderShip()
 	case battleships.FieldStateSunk:
 		return t.RenderSunk()
+	default:
+		return "  "
+	}
+}
+
+func (t Theme) NewRenderField(state parts.State) string {
+	switch state {
+	case parts.FieldMiss, parts.FieldProtected, parts.FieldCorner:
+		return t.RenderMiss()
+	case parts.FieldShip:
+		return t.RenderShip()
 	default:
 		return "  "
 	}

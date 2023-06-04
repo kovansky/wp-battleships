@@ -1,4 +1,4 @@
-package board
+package parts
 
 type State string
 

@@ -5,13 +5,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
-	"github.com/kovansky/wp-battleships/routines"
 	"github.com/kovansky/wp-battleships/ships"
 	"github.com/kovansky/wp-battleships/tui"
 	"github.com/kovansky/wp-battleships/tui/wrapper"
 	"github.com/rs/zerolog"
 	"os"
-	"time"
 )
 
 var (
@@ -79,10 +77,7 @@ func main() {
 		program.Send(msg)
 	}
 
-	battleships.Routines.Game = routines.CreateGame(ctx, time.Second, globalTheme, make(chan struct{}))
-
 	if _, err := program.Run(); err != nil {
-		battleships.Routines.Lobby.Quit()
 		log.Error().Err(err).Msg("Could not draw board")
 	}
 }
