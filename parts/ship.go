@@ -60,7 +60,7 @@ func (s Ship) Add(field string) (Ship, error) {
 }
 
 func (s Ship) Finish() (Ship, error) {
-	if _, ok := AllowedSizes[s.Size()]; !ok {
+	if !s.IsValidSize() {
 		return s, NewErrShipSize(s.Size())
 	}
 
@@ -109,4 +109,9 @@ func (s Ship) IsAdjacent(field string) bool {
 	}
 
 	return false
+}
+
+func (s Ship) IsValidSize() bool {
+	_, ok := AllowedSizes[s.Size()]
+	return ok
 }

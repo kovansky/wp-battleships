@@ -157,6 +157,8 @@ func (t Theme) NewRenderField(state parts.State) string {
 	switch state {
 	case parts.FieldMiss, parts.FieldProtected, parts.FieldCorner:
 		return t.RenderMiss()
+	case parts.FieldHit:
+		return t.RenderHit()
 	case parts.FieldShip:
 		return t.RenderShip()
 	default:

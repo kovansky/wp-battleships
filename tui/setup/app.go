@@ -13,6 +13,7 @@ import (
 	"github.com/kovansky/wp-battleships/tui/common"
 	"github.com/mbndr/figlet4go"
 	"github.com/rs/zerolog"
+	"strings"
 )
 
 type Setup struct {
@@ -107,12 +108,24 @@ func (c Setup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return c, nil
 			}
 
-			newC := c.addShip(value)
-			newC.board.SetBoard(newC.protectedFields)
+			switch strings.ToLower(value) {
+			case "ok", "next":
+				newC := c.finishShip()
+				newC.board.SetBoard(newC.protectedFields)
 
-			newC.input.SetValue("")
+				newC.input.SetValue("")
 
-			return newC, nil
+				return newC, nil
+			case "start":
+				// ToDo: check if enough ships are placed;
+				// ToDo: start game
+				break
+			default:
+				newC := c.addShip(value)
+				newC.board.SetBoard(newC.protectedFields)
+
+				return newC, nil
+			}
 		case "ctrl+c":
 			return c, tea.Quit
 		}
@@ -159,6 +172,52 @@ func (c Setup) countShips() int {
 	return count
 }
 
+func (c Setup) finishShip() Setup {
+	var (
+		ship parts.Ship
+		err  error
+	)
+	if len(c.ships[0]) == 0 {
+		c.errorText = "there is no ship being currently built"
+		return c
+	}
+	ship = c.ships[0][0]
+
+	shipCategory := c.ships[ship.Size()]
+	if len(shipCategory) >= cap(shipCategory) {
+		c.errorText = "you have reached the limit of ships of that size"
+		return c
+	}
+
+	ship, err = ship.Finish()
+	if err != nil {
+		c.errorText = "the ship size is wrong. Acceptable ship sizes: 1, 2, 3, 4"
+		return c
+	}
+
+	shipCategory = append(shipCategory, ship)
+	c.ships[ship.Size()] = shipCategory
+	c.ships[0] = make([]parts.Ship, 0, 1)
+
+	var (
+		stateHit    parts.State = parts.FieldHit
+		hitPriority             = stateHit.Priority()
+	)
+	for f := range ship.Ship() {
+		// If field is currently denoted empty
+		// Or if it's here as a protected (edge) - overwrite
+		if current, contains := c.protectedFields[f]; !contains || current.Priority() > hitPriority {
+			c.protectedFields[f] = stateHit
+			if err != nil {
+				c.errorText = "error while saving ship"
+				return c
+			}
+		}
+	}
+
+	return c
+}
+
 func (c Setup) addShip(value string) Setup {
 	var (
 		ship parts.Ship
@@ -167,6 +226,7 @@ func (c Setup) addShip(value string) Setup {
 	if len(c.ships[0]) == 0 {
 		if c.countShips() >= c.shipsLimit {
 			c.errorText = "you have reached the limit of ships you can place"
+			c.input.SetValue("")
 			return c
 		}
 
@@ -192,6 +252,7 @@ func (c Setup) addShip(value string) Setup {
 		c.errorText = "could not add field to ship"
 		if errors.As(err, size) {
 			c.errorText = "ship has reached it's maximum size"
+			c.input.SetValue("")
 		} else if errors.As(err, nonAdjacent) {
 			c.errorText = "new field has to touch the current ship"
 		} else if errors.As(err, malformed) || errors.As(err, adjacentMalformed) {
@@ -210,6 +271,7 @@ func (c Setup) addShip(value string) Setup {
 			c.protectedFields[f] = stateShip
 			if err != nil {
 				c.errorText = "could not add field to ship"
+				c.input.SetValue("")
 				return c
 			}
 		}
@@ -217,6 +279,7 @@ func (c Setup) addShip(value string) Setup {
 	protected, err := ship.Protected()
 	if err != nil {
 		c.errorText = "could not add field to ship"
+		c.input.SetValue("")
 		return c
 	}
 	for identifier, f := range protected {
