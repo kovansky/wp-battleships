@@ -15,6 +15,8 @@ type Game interface {
 
 	SetGameStatus(status GameStatus)
 	GameStatus() GameStatus
+
+	Statistics() *Statistics
 }
 
 type GameStatus struct {
@@ -30,6 +32,10 @@ type PlayersUpdateMsg struct {
 	PlayersInfo string
 }
 
+type PlayersListMsg struct {
+	Players []Player
+}
+
 type FieldState string
 
 const (
@@ -43,3 +49,10 @@ type Field struct {
 	Coord string
 	State FieldState
 }
+
+type PlayMode int
+
+const (
+	PlayModeWait PlayMode = iota
+	PlayModeChallenge
+)

@@ -17,11 +17,13 @@ type Game struct {
 	board         map[string]battleships.FieldState
 	opponentBoard map[string]battleships.FieldState
 
+	stats *battleships.Statistics
+
 	log *zerolog.Logger
 }
 
 func NewGame(key string, log *zerolog.Logger) battleships.Game {
-	return &Game{key: key, log: log}
+	return &Game{key: key, log: log, stats: battleships.NewStatistics()}
 }
 
 func (g *Game) SetPlayer(player battleships.Player) {
@@ -66,4 +68,8 @@ func (g *Game) SetGameStatus(status battleships.GameStatus) {
 
 func (g *Game) GameStatus() battleships.GameStatus {
 	return g.status
+}
+
+func (g *Game) Statistics() *battleships.Statistics {
+	return g.stats
 }

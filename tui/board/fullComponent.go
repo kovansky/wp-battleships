@@ -1,19 +1,23 @@
 package board
 
 import (
+	"fmt"
 	"github.com/76creates/stickers"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/tui"
 	"github.com/mbndr/figlet4go"
+	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type themes struct {
-	friendly Theme
-	enemy    Theme
-	global   Theme
+	friendly battleships.Theme
+	enemy    battleships.Theme
+	global   battleships.Theme
 }
 
 type Full struct {
@@ -32,7 +36,7 @@ type Full struct {
 	battleships.Game
 }
 
-func InitFull(game battleships.Game, themeFriendly, themeEnemy, themeGlobal Theme, playersInfo string) Full {
+func InitFull(game battleships.Game, themeFriendly, themeEnemy, themeGlobal battleships.Theme, playersInfo string) Full {
 	friendly := InitSingle(themeFriendly, game.Board())
 	opponent := InitSingle(themeEnemy, game.OpponentBoard())
 	flexbox := stickers.NewFlexBox(0, 0)
@@ -95,7 +99,7 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return c, tea.Quit
 		case "enter":
 			field := strings.ToUpper(c.targetInput.Value())
@@ -112,6 +116,7 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.displayError = ""
 			c.targetInput.SetValue("")
 
+			c.Statistics().IncrementShots()
 			shotState, err := battleships.ServerClient.Fire(c.Game, field)
 			if err != nil {
 				c.displayError = "Error firing: " + err.Error()
@@ -123,8 +128,11 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				fieldState = battleships.FieldStateMiss
 			case battleships.ShotHit:
 				fieldState = battleships.FieldStateHit
+				c.Statistics().IncrementHits()
 			case battleships.ShotSunk:
 				fieldState = battleships.FieldStateSunk
+				c.Statistics().IncrementHits()
+				c.Statistics().IncrementSunk()
 			}
 
 			board := c.OpponentBoard()
@@ -136,6 +144,8 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			c.SetOpponentBoard(board)
 			c.opponent.SetBoard(c.OpponentBoard())
+
+			c.targetInput.Blur()
 		}
 	case tea.WindowSizeMsg:
 		c.flexbox.SetWidth(msg.Width)
@@ -146,6 +156,15 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if c.GameStatus().ShouldFire {
 				cmds = append(cmds, c.targetInput.Focus())
 			}
+		case battleships.StatusEnded:
+			go func() {
+				time.Sleep(5 * time.Second)
+
+				battleships.ProgramMessage(tui.ApplicationStageChangeMsg{
+					From:  tui.StageGame,
+					Stage: tui.StageLogin,
+				})
+			}()
 		}
 	case battleships.PlayersUpdateMsg:
 		c.playersInfo = msg.PlayersInfo
@@ -166,36 +185,52 @@ func (c Full) View() string {
 	enemyRender, _ := c.asciiRender.Render("Enemy")
 	gameInfoRender, _ := c.asciiRender.Render("Game Info")
 
-	friendlyState := c.themes.global.TextPrimary
-	enemyState := c.themes.global.TextPrimary
+	friendlyState := c.themes.global.TextPrimary()
+	enemyState := c.themes.global.TextPrimary()
 
 	gameInfo := c.playersInfo
 
-	if c.GameStatus().ShouldFire {
-		friendlyState = c.themes.global.TextSecondary
-
-		gameInfo += "\n\nYour turn!\n\t" + c.themes.global.TextSecondary.Render(strconv.Itoa(c.GameStatus().Timer)) + " seconds left to fire"
-	} else {
-		enemyState = c.themes.global.TextSecondary
+	percentage := float64(c.Statistics().Hits()) / float64(c.Statistics().Shots())
+	if math.IsNaN(percentage) {
+		percentage = 0
 	}
+	gameInfo += fmt.Sprintf("\n\n%d hits out of %d shots (including %d sunk) - %.3f%%", c.Statistics().Hits(), c.Statistics().Shots(), c.Statistics().Sunk(), 0.0)
+
+	if c.GameStatus().ShouldFire {
+		friendlyState = c.themes.global.TextSecondary()
+
+		gameInfo += "\n\nYour turn!\n\t" + c.themes.global.TextSecondary().Render(strconv.Itoa(c.GameStatus().Timer)) + " seconds left to fire"
+	} else {
+		enemyState = c.themes.global.TextSecondary()
+	}
+
+	gameInfo += fmt.Sprintf("\n\nLegend:\n\t%s - ship\n\t%s - hit\n\t%s - sunk\n\t%s - miss",
+		c.themes.friendly.RenderShip(),
+		c.themes.friendly.RenderHit(),
+		c.themes.enemy.RenderSunk(),
+		c.themes.enemy.RenderMiss(),
+	)
+	gameInfo += fmt.Sprintf("\nYou and the opponent both have one 4-square, two 3sq, three 2sq and four 1sq ships. " +
+		"You take turns firing at each other's boards. You win when you sink all opponent's ships.\n" +
+		"To fire in your turn, type in the coordinate (i.e. A1) in the field below the boards. If you hit, you can fire again.\n")
 
 	c.flexbox.Row(0).Cell(0).SetContent(friendlyState.Render(friendlyRender))
 	c.flexbox.Row(0).Cell(1).SetContent(enemyState.Render(enemyRender))
-	c.flexbox.Row(0).Cell(2).SetContent(c.themes.global.TextPrimary.Render(gameInfoRender))
+	c.flexbox.Row(0).Cell(2).SetContent(c.themes.global.TextPrimary().Render(gameInfoRender))
 
 	c.flexbox.Row(1).Cell(0).SetContent(c.friendly.View())
 	c.flexbox.Row(1).Cell(1).SetContent(c.opponent.View())
 	c.flexbox.Row(1).Cell(2).SetContent(gameInfo)
 
 	if c.GameStatus().Status == battleships.StatusGameInProgress && c.GameStatus().ShouldFire {
-		c.flexbox.Row(2).Cell(0).SetContent("\n\n\n" + c.targetInput.View() + "\n" + c.themes.global.TextSecondary.Render(c.displayError))
+		c.flexbox.Row(2).Cell(0).SetContent("\n\n\n" + c.targetInput.View() + "\n" + c.themes.global.TextSecondary().Render(c.displayError))
 	} else if c.GameStatus().Status == battleships.StatusEnded {
 		victory := c.GameStatus().LastStatus == battleships.StatusWin
 		endString, _ := c.asciiRender.Render("You've won!")
-		endColor := c.themes.global.TextPrimary
+		endColor := c.themes.global.TextPrimary()
 		if !victory {
 			endString, _ = c.asciiRender.Render("You've lost :(")
-			endColor = c.themes.global.TextSecondary
+			endColor = c.themes.global.TextSecondary()
 		}
 
 		c.flexbox.Row(2).Cell(0).SetContent(endColor.Render(endString))

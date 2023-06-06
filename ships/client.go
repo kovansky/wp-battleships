@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -44,6 +45,18 @@ func (c *Client) InitGame(data battleships.GamePost) (battleships.Game, error) {
 	game := NewGame(headers.Get(ApiTokenHeader), c.log)
 
 	return game, nil
+}
+
+func (c *Client) Abandon(game battleships.Game) error {
+	method, endpoint := http.MethodDelete, "/game/abandon"
+	var body []byte
+
+	_, _, err := c.request(method, endpoint, game.Key(), body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Client) UpdateBoard(game battleships.Game) error {
@@ -137,6 +150,81 @@ func (c *Client) GameStatus(game battleships.Game) error {
 	return nil
 }
 
+func (c *Client) Refresh(game battleships.Game) error {
+	method, endpoint := http.MethodGet, "/game/refresh"
+	var body []byte
+
+	_, _, err := c.request(method, endpoint, game.Key(), body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) PlayerStats(nick string) (battleships.PlayerStats, error) {
+	method := http.MethodGet
+	endpoint, err := url.JoinPath("/stats", nick)
+	if err != nil {
+		return battleships.PlayerStats{}, err
+	}
+
+	var body []byte
+
+	res, _, err := c.request(method, endpoint, "", body)
+	if err != nil {
+		return battleships.PlayerStats{}, err
+	}
+
+	var parsed struct {
+		Stats battleships.PlayerStats `json:"stats"`
+	}
+	if err = json.Unmarshal(res, &parsed); err != nil {
+		return battleships.PlayerStats{}, err
+	}
+
+	return parsed.Stats, nil
+}
+
+func (c *Client) ListPlayers() ([]battleships.Player, error) {
+	var players []battleships.Player
+
+	method, endpoint := http.MethodGet, "/lobby"
+	var body []byte
+
+	res, _, err := c.request(method, endpoint, "", body)
+	if err != nil {
+		return players, err
+	}
+
+	type responseType struct {
+		Nick string `json:"nick"`
+	}
+	var parsed []struct {
+		Nick string `json:"nick"`
+	}
+	if err = json.Unmarshal(res, &parsed); err != nil {
+		return players, err
+	}
+
+	parsed = append(parsed, responseType{Nick: "WP_Bot"})
+
+	for _, pPlayer := range parsed {
+		player, err := c.PlayerStats(pPlayer.Nick)
+		if err != nil {
+			if strings.Contains(err.Error(), "404") {
+				players = append(players, NewPlayer(pPlayer.Nick, ""))
+			}
+
+			continue
+		}
+
+		players = append(players, NewPlayerFromStats(player))
+	}
+
+	return players, nil
+}
+
 func (c *Client) Fire(game battleships.Game, field string) (battleships.ShotState, error) {
 	method, endpoint := http.MethodPost, "/game/fire"
 	body, err := json.Marshal(struct {
@@ -173,40 +261,66 @@ func (c *Client) request(method, endpoint string, key string, body []byte) ([]by
 		return nil, nil, err
 	}
 
-	req, err := http.NewRequestWithContext(timeoutCtx, method, reqUrl, bytes.NewBuffer(body))
-	if key != "" {
-		req.Header.Set(ApiTokenHeader, key)
-	}
-	if err != nil {
-		return nil, nil, err
-	}
+	var (
+		repeats  = 0
+		finished = false
+	)
 
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer res.Body.Close()
+	var (
+		res     *http.Response
+		resBody []byte
+	)
+	for repeats < 3 && !finished {
+		repeats++
 
-	if res.StatusCode != 200 && res.StatusCode != 201 {
-		errMsg := fmt.Sprintf("Server returned code %d", res.StatusCode)
-
-		var parsed map[string]interface{}
-		if err = json.NewDecoder(res.Body).Decode(&parsed); err != nil {
-			if !errors.Is(err, io.EOF) {
-				return nil, nil, err
+		err := func() error {
+			req, err := http.NewRequestWithContext(timeoutCtx, method, reqUrl, bytes.NewBuffer(body))
+			if key != "" {
+				req.Header.Set(ApiTokenHeader, key)
 			}
+			if err != nil {
+				return err
+			}
+
+			res, err = http.DefaultClient.Do(req)
+			if err != nil {
+				return err
+			}
+			defer res.Body.Close()
+
+			if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+				if res.StatusCode == http.StatusServiceUnavailable {
+					return nil
+				}
+
+				errMsg := fmt.Sprintf("Server returned code %d", res.StatusCode)
+
+				var parsed map[string]interface{}
+				if err = json.NewDecoder(res.Body).Decode(&parsed); err != nil {
+					if !errors.Is(err, io.EOF) {
+						return err
+					}
+				}
+
+				if message, ok := parsed["message"]; ok {
+					errMsg = fmt.Sprintf("Server returned code %d. Message: %v", res.StatusCode, message)
+				}
+
+				return errors.New(errMsg)
+			}
+			finished = true
+
+			resBody, err = io.ReadAll(res.Body)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}()
+
+		if err != nil {
+			return nil, nil, err
 		}
-
-		if message, ok := parsed["message"]; ok {
-			errMsg = fmt.Sprintf("Server returned code %d. Message: %v", res.StatusCode, message)
-		}
-
-		return nil, nil, errors.New(errMsg)
-	}
-
-	resBody, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, nil, err
 	}
 
 	return resBody, res.Header, nil
