@@ -12,7 +12,7 @@
 - [x] #12 - pseudonym, wait room
 - [x] #13 - lobby
 - [x] #14 - timer
-- [ ] #15 - manual ships placement
+- [x] #15 - manual ships placement
 - [x] #16 - leave game
     - need to add help note
 - [ ] #17 - ranking
