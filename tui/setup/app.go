@@ -188,6 +188,14 @@ func (c Setup) View() string {
 		)
 	}
 
+	layout = lipgloss.JoinVertical(lipgloss.Center,
+		layout,
+		"\n\n\n",
+		"type in field identifiers to place ships",
+		"ok/next to submit ship",
+		"start to save board",
+	)
+
 	return lipgloss.JoinHorizontal(lipgloss.Center, layout)
 }
 
