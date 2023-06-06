@@ -160,8 +160,24 @@ func (c Setup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (c Setup) View() string {
 	layout := lipgloss.JoinVertical(lipgloss.Center,
 		c.subcomponents["header"].View(),
-		c.board.View(),
-		fmt.Sprintf("Ships count: %d", c.countShips()),
+
+		lipgloss.JoinHorizontal(lipgloss.Top,
+			c.board.View(),
+
+			lipgloss.NewStyle().MarginLeft(2).Render(
+				fmt.Sprintf("Ships count:\n"+
+					"* One-masted: %d/%d\n"+
+					"* Two-masted: %d/%d\n"+
+					"* Three-masted: %d/%d\n"+
+					"* Four-masted: %d/%d\n",
+					len(c.ships[1]), cap(c.ships[1]),
+					len(c.ships[2]), cap(c.ships[2]),
+					len(c.ships[3]), cap(c.ships[3]),
+					len(c.ships[4]), cap(c.ships[4]),
+				),
+			),
+		),
+		"",
 		c.input.View(),
 	)
 
