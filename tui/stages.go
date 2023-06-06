@@ -8,4 +8,6 @@ const (
 	StageWait        = "wait"
 	StageLobby       = "lobby"
 	StageGame        = "game"
+
+	StageRanking = "ranking"
 )
