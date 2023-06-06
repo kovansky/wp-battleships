@@ -9,8 +9,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
 	"github.com/kovansky/wp-battleships/parts"
+	"github.com/kovansky/wp-battleships/tui"
 	"github.com/kovansky/wp-battleships/tui/board"
 	"github.com/kovansky/wp-battleships/tui/common"
+	"github.com/kovansky/wp-battleships/tui/lobby"
+	"github.com/kovansky/wp-battleships/tui/wait"
 	"github.com/mbndr/figlet4go"
 	"github.com/rs/zerolog"
 	"strings"
@@ -121,9 +124,7 @@ func (c Setup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				return newC, nil
 			case "start":
-				// ToDo: check if enough ships are placed;
-				// ToDo: start game
-				break
+				return c.finishSetup()
 			default:
 				newC := c.addShip(value)
 
@@ -207,6 +208,79 @@ func (c Setup) countShips() int {
 	}
 
 	return count
+}
+
+func (c Setup) finishSetup() (Setup, tea.Cmd) {
+	var shipsBoard []string
+
+	for i, shipsOfSize := range c.ships {
+		if i == 0 {
+			continue
+		}
+
+		if len(shipsOfSize) != cap(shipsOfSize) {
+			c.errorText = "you don't have enough ships!"
+			return c, nil
+		}
+
+		for _, ship := range shipsOfSize {
+			for f := range ship.Ship() {
+				shipsBoard = append(shipsBoard, f)
+			}
+		}
+	}
+
+	battleships.PlayerData.Board = shipsBoard
+
+	var targetStage tui.Stage
+	targetStage = tui.StageWait
+	if battleships.PlayerData.PlayMode == battleships.PlayModeChallenge {
+		targetStage = tui.StageLobby
+	}
+
+	var app tea.Model
+	switch targetStage {
+	case tui.StageLobby:
+		players, err := battleships.ServerClient.ListPlayers()
+		if err != nil {
+			c.log.Fatal().Err(err).Msg("failed to list players")
+		}
+
+		app = lobby.Create(c.ctx, battleships.Themes.Global, players)
+		break
+	default:
+		var (
+			game     battleships.Game
+			gamePost battleships.GamePost
+			err      error
+		)
+
+		gamePost = battleships.GamePost{
+			Wpbot:  false,
+			Coords: battleships.PlayerData.Board,
+		}
+		if len(battleships.PlayerData.Nick) > 0 {
+			gamePost.Nick = battleships.PlayerData.Nick
+			gamePost.Desc = battleships.PlayerData.Description
+		}
+
+		game, err = battleships.ServerClient.InitGame(gamePost)
+		if err != nil {
+			c.log.Fatal().Err(err).Msg("Couldn't initialize game")
+		}
+
+		battleships.GameInstance = game
+
+		app = wait.Create(c.ctx, c.theme)
+	}
+
+	return c, func() tea.Msg {
+		return tui.ApplicationStageChangeMsg{
+			From:  tui.StageSetup,
+			Stage: targetStage,
+			Model: app,
+		}
+	}
 }
 
 func (c Setup) finishShip() Setup {

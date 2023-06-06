@@ -49,3 +49,10 @@ type Field struct {
 	Coord string
 	State FieldState
 }
+
+type PlayMode int
+
+const (
+	PlayModeWait PlayMode = iota
+	PlayModeChallenge
+)

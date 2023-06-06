@@ -58,7 +58,11 @@ func main() {
 		SetMiss(tui.NewBrush().
 			SetChar('o').
 			SetStyle(lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#ff0000"))))
+				Foreground(lipgloss.Color("#ff0000")))).
+		SetPotential(tui.NewBrush().
+			SetChar('o').
+			SetStyle(lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#e06c00"))))
 	globalTheme := tui.NewTheme().
 		SetTextPrimary(lipgloss.NewStyle().Foreground(lipgloss.Color("#ffd700"))).
 		SetTextSecondary(lipgloss.NewStyle().Foreground(lipgloss.Color("#1e90ff")))

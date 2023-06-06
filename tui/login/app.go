@@ -9,6 +9,7 @@ import (
 	"github.com/kovansky/wp-battleships/tui"
 	"github.com/kovansky/wp-battleships/tui/common"
 	"github.com/kovansky/wp-battleships/tui/lobby"
+	"github.com/kovansky/wp-battleships/tui/setup"
 	"github.com/kovansky/wp-battleships/tui/wait"
 	"github.com/mbndr/figlet4go"
 	"github.com/rs/zerolog"
@@ -33,7 +34,7 @@ func Create(ctx context.Context, theme battleships.Theme) Login {
 
 	asciiRender := figlet4go.NewAsciiRender()
 
-	inputComponents := make([]textinput.Model, 3)
+	inputComponents := make([]textinput.Model, 4)
 	inputs := []struct {
 		name        string
 		placeholder string
@@ -42,6 +43,7 @@ func Create(ctx context.Context, theme battleships.Theme) Login {
 		{"nick", "", 30},
 		{"description", "", 150},
 		{"mode", "w", 1},
+		{"setup", "s", 1},
 	}
 	for i, data := range inputs {
 		input := textinput.New()
@@ -166,6 +168,9 @@ func (c Login) View() string {
 		// Mode
 		c.theme.TextSecondary().Render("Would you like to wait for opponents' challenge (w), or choose the opponent yourself? (l)"),
 		c.inputs[2].View(),
+		// Setup
+		c.theme.TextSecondary().Render("Would you like to setup your ships (s), or get random board? (r)"),
+		c.inputs[3].View(),
 	)
 	block = lipgloss.JoinVertical(lipgloss.Center,
 		block,
@@ -189,57 +194,72 @@ func (c Login) submit() tea.Cmd {
 	battleships.PlayerData.Nick = c.inputs[0].Value()
 	battleships.PlayerData.Description = c.inputs[1].Value()
 	mode := c.inputs[2].Value()
+	wantsSetup := false
 
-	var targetStage tui.Stage
-	targetStage = tui.StageWait
-	if mode == "l" {
-		targetStage = tui.StageLobby
+	if c.inputs[3].Value() == "s" {
+		wantsSetup = true
 	}
 
-	if targetStage == tui.StageLobby {
+	battleships.PlayerData.PlayMode = battleships.PlayModeWait
+	if mode == "l" {
+		battleships.PlayerData.PlayMode = battleships.PlayModeChallenge
+	}
+
+	var targetStage tui.Stage
+	if wantsSetup {
+		targetStage = tui.StageSetup
+	} else if mode == "l" {
+		targetStage = tui.StageLobby
+	} else {
+		targetStage = tui.StageWait
+	}
+
+	var app tea.Model
+
+	switch targetStage {
+	case tui.StageSetup:
+		app = setup.Create(c.ctx, c.theme)
+		break
+	case tui.StageLobby:
 		players, err := battleships.ServerClient.ListPlayers()
 		if err != nil {
 			c.log.Fatal().Err(err).Msg("failed to list players")
 		}
 
-		app := lobby.Create(c.ctx, battleships.Themes.Global, players)
-
-		return func() tea.Msg {
-			return tui.ApplicationStageChangeMsg{
-				From:  tui.StageLogin,
-				Stage: targetStage,
-				Model: app,
-			}
-		}
-	} else {
+		app = lobby.Create(c.ctx, battleships.Themes.Global, players)
+		break
+	default:
 		var (
-			game battleships.Game
-			err  error
+			game     battleships.Game
+			gamePost battleships.GamePost
+			err      error
 		)
-		if len(battleships.PlayerData.Nick) > 0 {
-			game, err = battleships.ServerClient.InitGame(battleships.GamePost{
-				Wpbot: false,
-				Nick:  battleships.PlayerData.Nick,
-				Desc:  battleships.PlayerData.Description,
-			})
-		} else {
-			game, err = battleships.ServerClient.InitGame(battleships.GamePost{
-				Wpbot: false,
-			})
+		gamePost = battleships.GamePost{
+			Wpbot: false,
 		}
+		if len(battleships.PlayerData.Nick) > 0 {
+			gamePost.Nick = battleships.PlayerData.Nick
+			gamePost.Desc = battleships.PlayerData.Description
+		}
+		if len(battleships.PlayerData.Board) > 0 {
+			gamePost.Coords = battleships.PlayerData.Board
+		}
+
+		game, err = battleships.ServerClient.InitGame(gamePost)
 		if err != nil {
 			c.log.Fatal().Err(err).Msg("Couldn't initialize game")
 		}
+
 		battleships.GameInstance = game
 
-		app := wait.Create(c.ctx, c.theme)
+		app = wait.Create(c.ctx, c.theme)
+	}
 
-		return func() tea.Msg {
-			return tui.ApplicationStageChangeMsg{
-				From:  tui.StageLogin,
-				Stage: targetStage,
-				Model: app,
-			}
+	return func() tea.Msg {
+		return tui.ApplicationStageChangeMsg{
+			From:  tui.StageLogin,
+			Stage: targetStage,
+			Model: app,
 		}
 	}
 }

@@ -65,27 +65,29 @@ func (c Players) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.selected = c.table.GetCursorValue()
 
 			var (
-				game battleships.Game
-				err  error
+				game     battleships.Game
+				gamePost battleships.GamePost
+				err      error
 			)
+			gamePost = battleships.GamePost{
+				Wpbot: false,
+			}
+			if len(battleships.PlayerData.Nick) > 0 {
+				gamePost.Nick = battleships.PlayerData.Nick
+				gamePost.Desc = battleships.PlayerData.Description
+			}
+			if len(battleships.PlayerData.Board) > 0 {
+				gamePost.Coords = battleships.PlayerData.Board
+			}
 			if c.selected == "WP_Bot" {
-				game, err = battleships.ServerClient.InitGame(battleships.GamePost{
-					Wpbot: true,
-					Nick:  battleships.PlayerData.Nick,
-					Desc:  battleships.PlayerData.Description,
-				})
-				if err != nil {
-					c.log.Fatal().Err(err).Msg("Couldn't initialize game")
-				}
+				gamePost.Wpbot = true
 			} else {
-				game, err = battleships.ServerClient.InitGame(battleships.GamePost{
-					TargetNick: c.selected,
-					Nick:       battleships.PlayerData.Nick,
-					Desc:       battleships.PlayerData.Description,
-				})
-				if err != nil {
-					c.log.Fatal().Err(err).Msg("Couldn't initialize game")
-				}
+				gamePost.TargetNick = c.selected
+			}
+
+			game, err = battleships.ServerClient.InitGame(gamePost)
+			if err != nil {
+				c.log.Fatal().Err(err).Msg("Couldn't initialize game")
 			}
 
 			err = battleships.ServerClient.UpdateBoard(game)

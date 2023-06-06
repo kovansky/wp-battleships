@@ -21,5 +21,7 @@ var (
 	PlayerData struct {
 		Nick        string
 		Description string
+		Board       []string
+		PlayMode    PlayMode
 	}
 )
