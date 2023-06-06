@@ -94,7 +94,7 @@ func (c Login) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return c, tea.Quit
 		case "tab", "shift+tab", "enter", "up", "down":
 			s := msg.String()
@@ -212,6 +212,26 @@ func (c Login) submit() tea.Cmd {
 			}
 		}
 	} else {
+		var (
+			game battleships.Game
+			err  error
+		)
+		if len(battleships.PlayerData.Nick) > 0 {
+			game, err = battleships.ServerClient.InitGame(battleships.GamePost{
+				Wpbot: false,
+				Nick:  battleships.PlayerData.Nick,
+				Desc:  battleships.PlayerData.Description,
+			})
+		} else {
+			game, err = battleships.ServerClient.InitGame(battleships.GamePost{
+				Wpbot: false,
+			})
+		}
+		if err != nil {
+			c.log.Fatal().Err(err).Msg("Couldn't initialize game")
+		}
+		battleships.GameInstance = game
+
 		app := wait.Create(c.ctx, c.theme)
 
 		return func() tea.Msg {

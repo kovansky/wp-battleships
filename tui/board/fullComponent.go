@@ -6,10 +6,12 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	battleships "github.com/kovansky/wp-battleships"
+	"github.com/kovansky/wp-battleships/tui"
 	"github.com/mbndr/figlet4go"
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type themes struct {
@@ -97,7 +99,7 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return c, tea.Quit
 		case "enter":
 			field := strings.ToUpper(c.targetInput.Value())
@@ -154,6 +156,15 @@ func (c Full) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if c.GameStatus().ShouldFire {
 				cmds = append(cmds, c.targetInput.Focus())
 			}
+		case battleships.StatusEnded:
+			go func() {
+				time.Sleep(5 * time.Second)
+
+				battleships.ProgramMessage(tui.ApplicationStageChangeMsg{
+					From:  tui.StageGame,
+					Stage: tui.StageLogin,
+				})
+			}()
 		}
 	case battleships.PlayersUpdateMsg:
 		c.playersInfo = msg.PlayersInfo
@@ -192,6 +203,16 @@ func (c Full) View() string {
 	} else {
 		enemyState = c.themes.global.TextSecondary()
 	}
+
+	gameInfo += fmt.Sprintf("\n\nLegend:\n\t%s - ship\n\t%s - hit\n\t%s - sunk\n\t%s - miss",
+		c.themes.friendly.RenderShip(),
+		c.themes.friendly.RenderHit(),
+		c.themes.enemy.RenderSunk(),
+		c.themes.enemy.RenderMiss(),
+	)
+	gameInfo += fmt.Sprintf("\nYou and the opponent both have one 4-square, two 3sq, three 2sq and four 1sq ships. " +
+		"You take turns firing at each other's boards. You win when you sink all opponent's ships.\n" +
+		"To fire in your turn, type in the coordinate (i.e. A1) in the field below the boards. If you hit, you can fire again.\n")
 
 	c.flexbox.Row(0).Cell(0).SetContent(friendlyState.Render(friendlyRender))
 	c.flexbox.Row(0).Cell(1).SetContent(enemyState.Render(enemyRender))
