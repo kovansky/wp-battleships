@@ -16,6 +16,8 @@ import (
 	"strings"
 )
 
+const SizeMax = 4
+
 type Setup struct {
 	ctx context.Context
 	log zerolog.Logger
@@ -28,8 +30,9 @@ type Setup struct {
 	input textinput.Model
 	ships map[int][]parts.Ship
 
-	errorText       string
-	protectedFields map[string]parts.State
+	errorText              string
+	protectedFields        map[string]parts.State
+	currentProtectedFields map[string]parts.State
 
 	shipsLimitPerSize map[int]int
 	shipsLimit        int
@@ -78,11 +81,12 @@ func Create(ctx context.Context, theme battleships.Theme) Setup {
 			3: make([]parts.Ship, 0, perSize[3]),
 			4: make([]parts.Ship, 0, perSize[4]),
 		},
-		shipsLimit:        shipsLimit,
-		shipsLimitPerSize: perSize,
-		errorText:         "",
-		protectedFields:   map[string]parts.State{},
-		asciiRender:       asciiRender,
+		shipsLimit:             shipsLimit,
+		shipsLimitPerSize:      perSize,
+		errorText:              "",
+		protectedFields:        map[string]parts.State{},
+		currentProtectedFields: map[string]parts.State{},
+		asciiRender:            asciiRender,
 	}
 }
 
@@ -122,7 +126,16 @@ func (c Setup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			default:
 				newC := c.addShip(value)
-				newC.board.SetBoard(newC.protectedFields)
+
+				fullBoard := map[string]parts.State{}
+				for k, v := range newC.protectedFields {
+					fullBoard[k] = v
+				}
+				for k, v := range newC.currentProtectedFields {
+					fullBoard[k] = v
+				}
+
+				newC.board.SetBoard(fullBoard)
 
 				return newC, nil
 			}
@@ -186,6 +199,8 @@ func (c Setup) finishShip() Setup {
 	shipCategory := c.ships[ship.Size()]
 	if len(shipCategory) >= cap(shipCategory) {
 		c.errorText = "you have reached the limit of ships of that size"
+		c.ships[0] = make([]parts.Ship, 0, 1)
+		c.currentProtectedFields = map[string]parts.State{}
 		return c
 	}
 
@@ -198,6 +213,7 @@ func (c Setup) finishShip() Setup {
 	shipCategory = append(shipCategory, ship)
 	c.ships[ship.Size()] = shipCategory
 	c.ships[0] = make([]parts.Ship, 0, 1)
+	c.currentProtectedFields = map[string]parts.State{}
 
 	var (
 		stateHit    parts.State = parts.FieldHit
@@ -206,12 +222,23 @@ func (c Setup) finishShip() Setup {
 	for f := range ship.Ship() {
 		// If field is currently denoted empty
 		// Or if it's here as a protected (edge) - overwrite
-		if current, contains := c.protectedFields[f]; !contains || current.Priority() > hitPriority {
+		if current, contains := c.protectedFields[f]; !contains || current.Priority() < hitPriority {
 			c.protectedFields[f] = stateHit
 			if err != nil {
 				c.errorText = "error while saving ship"
 				return c
 			}
+		}
+	}
+	protected, err := ship.Protected()
+	if err != nil {
+		return c
+	}
+	for identifier, f := range protected {
+		// If field is currently denoted empty
+		// Or if it's there as a protected (edge/corner), but the type differ (i.e. was edge, is corner) - overwrite
+		if _, contains := c.protectedFields[identifier]; !contains {
+			c.protectedFields[identifier] = f.State
 		}
 	}
 
@@ -223,6 +250,9 @@ func (c Setup) addShip(value string) Setup {
 		ship parts.Ship
 		err  error
 	)
+
+	value = strings.ToUpper(value)
+
 	if len(c.ships[0]) == 0 {
 		if c.countShips() >= c.shipsLimit {
 			c.errorText = "you have reached the limit of ships you can place"
@@ -237,6 +267,11 @@ func (c Setup) addShip(value string) Setup {
 
 	if _, contains := ship.Ship()[value]; contains {
 		c.errorText = "this field is already selected"
+		return c
+	}
+
+	if _, contains := c.protectedFields[value]; contains {
+		c.errorText = "you cannot place a ship on that field"
 		return c
 	}
 
@@ -262,32 +297,26 @@ func (c Setup) addShip(value string) Setup {
 		return c
 	}
 
+	c.currentProtectedFields = map[string]parts.State{}
+
 	var stateShip parts.State = parts.FieldShip
 	shipPriority := stateShip.Priority()
 	for f := range ship.Ship() {
-		// If field is currently denoted empty
-		// Or if it's here as a protected (edge) - overwrite
-		if current, contains := c.protectedFields[f]; !contains || current.Priority() > shipPriority {
-			c.protectedFields[f] = stateShip
-			if err != nil {
-				c.errorText = "could not add field to ship"
-				c.input.SetValue("")
-				return c
-			}
+		if current, contains := c.currentProtectedFields[f]; !contains || current.Priority() < shipPriority {
+			c.currentProtectedFields[f] = stateShip
 		}
 	}
 	protected, err := ship.Protected()
 	if err != nil {
-		c.errorText = "could not add field to ship"
-		c.input.SetValue("")
 		return c
 	}
 	for identifier, f := range protected {
-		// If field is currently denoted empty
-		// Or if it's there as a protected (edge/corner), but the type differ (i.e. was edge, is corner) - overwrite
-		if current, contains := c.protectedFields[identifier]; !contains ||
-			(current.Priority() == f.State.Priority() && current != f.State) {
-			c.protectedFields[identifier] = f.State
+		c.currentProtectedFields[identifier] = f.State
+
+		if _, fullContains := c.protectedFields[identifier]; ship.Size() < SizeMax &&
+			f.State == parts.FieldProtected &&
+			!fullContains {
+			c.currentProtectedFields[identifier] = parts.FieldPotential
 		}
 	}
 
@@ -296,6 +325,8 @@ func (c Setup) addShip(value string) Setup {
 	} else {
 		c.ships[0][0] = ship
 	}
+
+	c.input.SetValue("")
 
 	return c
 }

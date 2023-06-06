@@ -81,15 +81,16 @@ func (s Ship) Protected() (map[string]StatedField, error) {
 				continue
 			}
 
-			if _, inProtected := protected[adjacent]; s.Contains(adjacent) || inProtected {
-				continue
-			}
-
-			var err error
 			var state State = FieldProtected
 			if len(direction) == 2 {
 				state = FieldCorner
 			}
+
+			if current, inProtected := protected[adjacent]; s.Contains(adjacent) || (inProtected && current.State.Priority() >= state.Priority()) {
+				continue
+			}
+
+			var err error
 
 			protected[adjacent], err = NewStatedField(adjacent, state)
 			if err != nil {

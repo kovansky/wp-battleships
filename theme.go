@@ -39,6 +39,8 @@ type Theme interface {
 	SetSunk(brush Brush) Theme
 	Miss() Brush
 	SetMiss(brush Brush) Theme
+	Potential() Brush
+	SetPotential(brush Brush) Theme
 
 	RenderBorder() string
 	RenderField(state FieldState) string
@@ -48,4 +50,5 @@ type Theme interface {
 	RenderHit() string
 	RenderSunk() string
 	RenderMiss() string
+	RenderPotential() string
 }

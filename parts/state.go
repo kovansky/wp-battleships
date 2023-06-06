@@ -9,6 +9,7 @@ const (
 	FieldMiss            = "miss"
 	FieldProtected       = "protected"
 	FieldCorner          = "corner"
+	FieldPotential       = "potential"
 )
 
 func (s State) Priority() int {
@@ -19,8 +20,12 @@ func (s State) Priority() int {
 		return 2
 	case FieldHit:
 		return 3
-	case FieldProtected, FieldCorner:
+	case FieldPotential:
+		return 5
+	case FieldCorner:
 		return 4
+	case FieldProtected:
+		return 6
 	default:
 		return 1
 	}

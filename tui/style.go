@@ -43,6 +43,7 @@ type Theme struct {
 	hit           battleships.Brush
 	sunk          battleships.Brush
 	miss          battleships.Brush
+	potential     battleships.Brush
 }
 
 func NewTheme() battleships.Theme {
@@ -134,6 +135,15 @@ func (t Theme) SetMiss(brush battleships.Brush) battleships.Theme {
 	return t
 }
 
+func (t Theme) Potential() battleships.Brush {
+	return t.potential
+}
+func (t Theme) SetPotential(brush battleships.Brush) battleships.Theme {
+	brush = brush.SetStyle(brush.Style().PaddingRight(1))
+	t.potential = brush
+	return t
+}
+
 func (t Theme) RenderBorder() string {
 	return t.border.Style().Render(string(t.border.Char()))
 }
@@ -161,6 +171,8 @@ func (t Theme) NewRenderField(state parts.State) string {
 		return t.RenderHit()
 	case parts.FieldShip:
 		return t.RenderShip()
+	case parts.FieldPotential:
+		return t.RenderPotential()
 	default:
 		return "  "
 	}
@@ -180,4 +192,8 @@ func (t Theme) RenderSunk() string {
 
 func (t Theme) RenderMiss() string {
 	return t.miss.Style().Render(string(t.miss.Char()))
+}
+
+func (t Theme) RenderPotential() string {
+	return t.potential.Style().Render(string(t.miss.Char()))
 }
