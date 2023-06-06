@@ -225,6 +225,31 @@ func (c *Client) ListPlayers() ([]battleships.Player, error) {
 	return players, nil
 }
 
+func (c *Client) Stats() ([]battleships.Player, error) {
+	var players []battleships.Player
+
+	method, endpoint := http.MethodGet, "/stats"
+	var body []byte
+
+	res, _, err := c.request(method, endpoint, "", body)
+	if err != nil {
+		return players, err
+	}
+
+	var parsed struct {
+		Stats []battleships.PlayerStats `json:"stats"`
+	}
+	if err = json.Unmarshal(res, &parsed); err != nil {
+		return players, err
+	}
+
+	for _, player := range parsed.Stats {
+		players = append(players, NewPlayerFromStats(player))
+	}
+
+	return players, nil
+}
+
 func (c *Client) Fire(game battleships.Game, field string) (battleships.ShotState, error) {
 	method, endpoint := http.MethodPost, "/game/fire"
 	body, err := json.Marshal(struct {

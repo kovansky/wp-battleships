@@ -9,6 +9,7 @@ import (
 	"github.com/kovansky/wp-battleships/tui/board"
 	"github.com/kovansky/wp-battleships/tui/lobby"
 	"github.com/kovansky/wp-battleships/tui/login"
+	"github.com/kovansky/wp-battleships/tui/ranking"
 	"github.com/kovansky/wp-battleships/tui/setup"
 	"github.com/kovansky/wp-battleships/tui/wait"
 	"github.com/mbndr/figlet4go"
@@ -23,11 +24,12 @@ type Application struct {
 	stage tui.Stage
 	theme battleships.Theme
 
-	login login.Login
-	lobby lobby.Lobby
-	setup setup.Setup
-	wait  wait.Wait
-	game  board.Full
+	login   login.Login
+	lobby   lobby.Lobby
+	setup   setup.Setup
+	wait    wait.Wait
+	game    board.Full
+	ranking ranking.Ranking
 
 	width, height int
 
@@ -88,9 +90,26 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.From == tui.StageGame {
 				battleships.Routines.Game.Quit()
 			}
-		case tui.StageLobby:
-			c.lobby = msg.Model.(lobby.Lobby)
+		case tui.StageRanking:
 			c.stage = msg.Stage
+
+			players, _ := battleships.ServerClient.Stats()
+
+			c.ranking = ranking.Create(c.ctx, c.theme, players)
+			cmds = append(cmds, c.ranking.Init())
+
+			tmp, cmd = c.ranking.Update(tea.WindowSizeMsg{
+				Width:  c.width,
+				Height: c.height,
+			})
+			c.ranking = tmp.(ranking.Ranking)
+			cmds = append(cmds, cmd)
+			break
+		case tui.StageLobby:
+			c.stage = msg.Stage
+			if msg.Model != nil {
+				c.lobby = msg.Model.(lobby.Lobby)
+			}
 
 			cmds = append(cmds, c.lobby.Init())
 
@@ -198,6 +217,11 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.game = tmp.(board.Full)
 		cmds = append(cmds, cmd)
 		break
+	case tui.StageRanking:
+		tmp, cmd = c.ranking.Update(msg)
+		c.ranking = tmp.(ranking.Ranking)
+		cmds = append(cmds, cmd)
+		break
 	}
 
 	return c, tea.Batch(cmds...)
@@ -215,6 +239,8 @@ func (c Application) View() string {
 		return c.lobby.View()
 	case tui.StageGame:
 		return c.game.View()
+	case tui.StageRanking:
+		return c.ranking.View()
 	}
 
 	return ""

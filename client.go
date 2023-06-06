@@ -14,6 +14,8 @@ type Client interface {
 	PlayerStats(nick string) (PlayerStats, error)
 	ListPlayers() ([]Player, error)
 
+	Stats() ([]Player, error)
+
 	Fire(game Game, field string) (ShotState, error)
 }
 
