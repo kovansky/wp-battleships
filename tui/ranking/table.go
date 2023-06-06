@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	battleships "github.com/kovansky/wp-battleships"
 	"github.com/rs/zerolog"
-	"unicode"
 )
 
 type Table struct {
@@ -58,17 +57,6 @@ func (c Table) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "up":
 			c.table.CursorUp()
 			_, c.focused = c.table.GetCursorLocation()
-		case "backspace":
-			c.filterWithStr(msg.String())
-			_, c.filterString = c.table.GetFilter()
-		default:
-			if len(msg.String()) == 1 {
-				r := msg.Runes[0]
-				if unicode.IsLetter(r) || unicode.IsDigit(r) {
-					c.filterWithStr(msg.String())
-					_, c.filterString = c.table.GetFilter()
-				}
-			}
 		}
 	case tea.WindowSizeMsg:
 		c.table.
@@ -112,8 +100,8 @@ func initializeTable(theme battleships.Theme, players ...battleships.Player) (*s
 		err               error
 	)
 
-	for id, player := range players {
-		RankingTableTable = append(RankingTableTable, []any{id + 1, player.Name(), player.Points(), player.Wins(), player.Games()})
+	for _, player := range players {
+		RankingTableTable = append(RankingTableTable, []any{player.Rank(), player.Name(), player.Points(), player.Wins(), player.Games()})
 	}
 
 	table, err = table.AddRows(RankingTableTable)

@@ -15,6 +15,6 @@
 - [x] #15 - manual ships placement
 - [x] #16 - leave game
     - need to add help note
-- [ ] #17 - ranking
+- [x] #17 - ranking
 - [x] #18 - game state
-- [ ] #19 - count enemy ships
+- [x] #19 - count enemy ships

@@ -190,11 +190,11 @@ func (c Full) View() string {
 
 	gameInfo := c.playersInfo
 
-	percentage := float64(c.Statistics().Hits()) / float64(c.Statistics().Shots())
+	percentage := float64(c.Statistics().Hits()) / float64(c.Statistics().Shots()) * 100
 	if math.IsNaN(percentage) {
 		percentage = 0
 	}
-	gameInfo += fmt.Sprintf("\n\n%d hits out of %d shots (including %d sunk) - %.3f%%", c.Statistics().Hits(), c.Statistics().Shots(), c.Statistics().Sunk(), 0.0)
+	gameInfo += fmt.Sprintf("\n\n%d hits out of %d shots (including %d (of 10) sunk) - %.2f%%", c.Statistics().Hits(), c.Statistics().Shots(), c.Statistics().Sunk(), percentage)
 
 	if c.GameStatus().ShouldFire {
 		friendlyState = c.themes.global.TextSecondary()
@@ -210,9 +210,8 @@ func (c Full) View() string {
 		c.themes.enemy.RenderSunk(),
 		c.themes.enemy.RenderMiss(),
 	)
-	gameInfo += fmt.Sprintf("\nYou and the opponent both have one 4-square, two 3sq, three 2sq and four 1sq ships. " +
-		"You take turns firing at each other's boards. You win when you sink all opponent's ships.\n" +
-		"To fire in your turn, type in the coordinate (i.e. A1) in the field below the boards. If you hit, you can fire again.\n")
+	gameInfo += fmt.Sprintf("\nYou win when you sink all opponent's ships (one 4-square, two 3sq, three 2sq and four 1sq).\n" +
+		"To fire in your turn, type in the coordinate (i.e. A1) in the field below the boards. If you hit, you can fire again.")
 
 	c.flexbox.Row(0).Cell(0).SetContent(friendlyState.Render(friendlyRender))
 	c.flexbox.Row(0).Cell(1).SetContent(enemyState.Render(enemyRender))

@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	battleships "github.com/kovansky/wp-battleships"
 	"github.com/kovansky/wp-battleships/routines"
+	"github.com/kovansky/wp-battleships/ships"
 	"github.com/kovansky/wp-battleships/tui"
 	"github.com/kovansky/wp-battleships/tui/board"
 	"github.com/kovansky/wp-battleships/tui/lobby"
@@ -94,6 +95,13 @@ func (c Application) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.stage = msg.Stage
 
 			players, _ := battleships.ServerClient.Stats()
+
+			if len(battleships.PlayerData.Nick) > 0 {
+				player, err := battleships.ServerClient.PlayerStats(battleships.PlayerData.Nick)
+				if err == nil {
+					players = append(players, ships.NewPlayerFromStats(player))
+				}
+			}
 
 			c.ranking = ranking.Create(c.ctx, c.theme, players)
 			cmds = append(cmds, c.ranking.Init())

@@ -10,6 +10,7 @@ type Player struct {
 	wins        int
 	games       int
 	points      int
+	rank        int
 }
 
 func NewPlayer(name, description string) *Player {
@@ -22,6 +23,7 @@ func NewPlayerFromStats(stats battleships.PlayerStats) *Player {
 		wins:   stats.Wins,
 		games:  stats.Games,
 		points: stats.Points,
+		rank:   stats.Rank,
 	}
 }
 
@@ -55,4 +57,12 @@ func (p Player) SetGames(games int) {
 
 func (p Player) Games() int {
 	return p.games
+}
+
+func (p Player) SetRank(rank int) {
+	p.rank = rank
+}
+
+func (p Player) Rank() int {
+	return p.rank
 }

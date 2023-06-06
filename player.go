@@ -9,4 +9,6 @@ type Player interface {
 	Points() int
 	SetGames(points int)
 	Games() int
+	SetRank(points int)
+	Rank() int
 }
