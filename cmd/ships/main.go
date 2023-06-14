@@ -7,7 +7,7 @@ import (
 	battleships "github.com/kovansky/wp-battleships"
 	"github.com/kovansky/wp-battleships/ships"
 	"github.com/kovansky/wp-battleships/tui"
-	"github.com/kovansky/wp-battleships/tui/setup"
+	"github.com/kovansky/wp-battleships/tui/wrapper"
 	"github.com/rs/zerolog"
 	"os"
 )
@@ -73,9 +73,9 @@ func main() {
 		Global: globalTheme,
 	}
 
-	setupApp := setup.Create(ctx, globalTheme)
+	applicationWrapper := wrapper.Create(ctx, globalTheme)
 
-	program := tea.NewProgram(setupApp, tea.WithAltScreen())
+	program := tea.NewProgram(applicationWrapper, tea.WithAltScreen())
 
 	battleships.ProgramMessage = func(msg tea.Msg) {
 		program.Send(msg)
