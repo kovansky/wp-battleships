@@ -16,4 +16,13 @@ _Linux:_
 go build -o ./dist/ships ./cmd/ships
 ```
 
+## Run
+
+```shell
+# Windows
+./dist/ships.exe
+# Or linux
+./dist/ships
+```
+
 Have fun c:
